@@ -1,0 +1,68 @@
+{
+  "kind": "collectionType",
+  "collectionName": "marketplace_sync_events",
+  "info": {
+    "singularName": "marketplace-sync-event",
+    "pluralName": "marketplace-sync-events",
+    "displayName": "Marketplace Sync Event",
+    "description": "Journal persistant des operations de synchronisation marketplace"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "tenant": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::tenant.tenant"
+    },
+    "channel": {
+      "type": "enumeration",
+      "enum": ["discogs"],
+      "default": "discogs",
+      "required": true
+    },
+    "action": {
+      "type": "enumeration",
+      "enum": [
+        "search_release",
+        "attach_release",
+        "check_completeness",
+        "publish_listing",
+        "simulate_sale",
+        "mark_out_of_stock"
+      ],
+      "required": true
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": ["success", "error"],
+      "required": true
+    },
+    "product": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::product.product"
+    },
+    "sellableUnit": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::sellable-unit.sellable-unit"
+    },
+    "channelListing": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::channel-listing.channel-listing"
+    },
+    "message": {
+      "type": "text"
+    },
+    "payload": {
+      "type": "json"
+    },
+    "happenedAt": {
+      "type": "datetime",
+      "required": true
+    }
+  }
+}
