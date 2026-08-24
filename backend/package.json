@@ -7,6 +7,8 @@
     "build": "strapi build",
     "console": "strapi console",
     "deploy": "strapi deploy",
+    "demo:reset": "node scripts/demo-data.cjs reset",
+    "demo:setup": "node scripts/demo-data.cjs setup",
     "dev": "strapi develop",
     "develop": "strapi develop",
     "start": "strapi start",

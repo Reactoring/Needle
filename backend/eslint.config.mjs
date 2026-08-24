@@ -8,14 +8,18 @@ export default tseslint.config(
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
-    files: ['scripts/**/*.mjs'],
+    files: ['scripts/**/*.{cjs,mjs}'],
     languageOptions: {
       globals: {
         console: 'readonly',
         process: 'readonly',
+        require: 'readonly',
         fetch: 'readonly',
         URL: 'readonly',
       },
+    },
+    rules: {
+      '@typescript-eslint/no-require-imports': 'off',
     },
   },
   {
