@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import type { MouseEvent } from 'react';
 import { api } from './api';
 import type { Tenant } from './types';
 import { SellerView } from './SellerView';
@@ -6,16 +7,35 @@ import { BuyerView } from './BuyerView';
 
 type Tab = 'catalog' | 'marketplace';
 
+const TAB_PATHS: Record<Tab, string> = {
+  catalog: '/catalogue',
+  marketplace: '/marketplace',
+};
+
+function tabFromPath(pathname: string): Tab {
+  return pathname.replace(/\/+$/, '') === TAB_PATHS.marketplace ? 'marketplace' : 'catalog';
+}
+
 export default function App() {
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [tenantId, setTenantId] = useState('');
   const [mode, setMode] = useState('');
-  const [tab, setTab] = useState<Tab>('catalog');
+  const [tab, setTab] = useState<Tab>(() => tabFromPath(window.location.pathname));
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   // Incremented after each action to refresh the lists in both views.
   const [refreshKey, setRefreshKey] = useState(0);
   const refresh = useCallback(() => setRefreshKey((key) => key + 1), []);
+
+  useEffect(() => {
+    const syncTabWithHistory = () => setTab(tabFromPath(window.location.pathname));
+    window.addEventListener('popstate', syncTabWithHistory);
+    return () => window.removeEventListener('popstate', syncTabWithHistory);
+  }, []);
+
+  useEffect(() => {
+    document.title = tab === 'catalog' ? 'Needle — Catalogue vendeur' : 'Needle — Marketplace';
+  }, [tab]);
 
   useEffect(() => {
     api
@@ -50,10 +70,38 @@ export default function App() {
     setRefreshKey((key) => key + 1);
   }
 
+  function navigate(event: MouseEvent<HTMLAnchorElement>, nextTab: Tab) {
+    if (
+      event.defaultPrevented ||
+      event.button !== 0 ||
+      event.metaKey ||
+      event.ctrlKey ||
+      event.shiftKey ||
+      event.altKey
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+    const path = TAB_PATHS[nextTab];
+    if (window.location.pathname !== path) {
+      window.history.pushState({}, '', path);
+    }
+    setTab(nextTab);
+  }
+
   return (
     <div className={`app-shell theme-${tab}`}>
+      <a className="skip-link" href="#main-content">
+        Aller au contenu
+      </a>
       <header className="topbar">
-        <a className="brand" href="#main-content" aria-label="Aller au contenu">
+        <a
+          className="brand"
+          href={TAB_PATHS.catalog}
+          aria-label="Needle — ouvrir le catalogue vendeur"
+          onClick={(event) => navigate(event, 'catalog')}
+        >
           <span className="brand-mark" aria-hidden="true">
             <span />
           </span>
@@ -64,15 +112,22 @@ export default function App() {
         </a>
 
         <nav className="tabs" aria-label="Sections principales">
-          <button className={tab === 'catalog' ? 'active' : ''} onClick={() => setTab('catalog')}>
+          <a
+            className={tab === 'catalog' ? 'active' : ''}
+            href={TAB_PATHS.catalog}
+            aria-current={tab === 'catalog' ? 'page' : undefined}
+            onClick={(event) => navigate(event, 'catalog')}
+          >
             <span aria-hidden="true">◫</span> Catalogue
-          </button>
-          <button
+          </a>
+          <a
             className={tab === 'marketplace' ? 'active' : ''}
-            onClick={() => setTab('marketplace')}
+            href={TAB_PATHS.marketplace}
+            aria-current={tab === 'marketplace' ? 'page' : undefined}
+            onClick={(event) => navigate(event, 'marketplace')}
           >
             <span aria-hidden="true">◎</span> Marketplace
-          </button>
+          </a>
         </nav>
 
         <div className="topbar-actions">
@@ -110,7 +165,7 @@ export default function App() {
 
       {error && <div className="banner-error">{error}</div>}
 
-      <main id="main-content">
+      <main id="main-content" tabIndex={-1}>
         {loading && <div className="loading-state">Ouverture de la session de démonstration…</div>}
         {tenant && tab === 'catalog' && (
           <SellerView

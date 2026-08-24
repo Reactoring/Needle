@@ -197,6 +197,14 @@ Ouvrir ensuite [http://localhost:5173](http://localhost:5173). Le backend écout
 [http://localhost:1337](http://localhost:1337) et l’administration Strapi sur
 [http://localhost:1337/admin](http://localhost:1337/admin).
 
+Les deux interfaces possèdent des URL partageables indépendantes :
+
+- [`/catalogue`](http://localhost:5173/catalogue) ouvre le backoffice vendeur ;
+- [`/marketplace`](http://localhost:5173/marketplace) ouvre la vue acheteur simulée.
+
+La racine `/` reste un alias du catalogue. La navigation utilise l’historique du navigateur :
+les boutons précédent/suivant et l’ouverture d’un lien dans un nouvel onglet sont supportés.
+
 ### Seed automatique en local
 
 Au démarrage du backend, le seed est lancé automatiquement uniquement si :
@@ -232,6 +240,11 @@ npm run demo:reset
 séquence SKU ne repart de 1 que lorsqu’aucun autre exemplaire n’existe.
 
 ## Déploiement de la démo
+
+Le serveur qui héberge le frontend doit appliquer une réécriture SPA : les requêtes directes
+vers `/catalogue` et `/marketplace` doivent toutes deux servir `index.html`. Cette règle est
+indispensable pour que les URL partagées par email fonctionnent aussi lors d’un rechargement ou
+d’une ouverture dans un nouvel onglet.
 
 En production, le seed automatique est **toujours désactivé**, même si
 `DEMO_AUTO_SEED=true`. La démo peut donc rester déployée sans mutation automatique au
