@@ -49,12 +49,16 @@ export default function App() {
         if (preferred) {
           setTenantId(preferred.documentId);
         } else {
-          setError('Aucune boutique de démonstration disponible. Lancez le seed backend.');
+          setError(
+            'Aucune boutique de démonstration disponible. Provisionnez les données avec `npm run demo:setup` dans backend/.',
+          );
         }
       })
       .catch(() =>
         setError(
-          'Le backend est injoignable sur http://localhost:1337. Lancez `npm run develop` dans backend/.',
+          import.meta.env.DEV
+            ? 'Le backend est injoignable sur http://localhost:1337. Lancez `npm run develop` dans backend/.'
+            : 'Le backend de démonstration est indisponible pour le moment. Réessayez dans quelques instants.',
         ),
       )
       .finally(() => setLoading(false));
