@@ -32,7 +32,7 @@ interface LogInput {
 
 let connector: DiscogsConnector | null = null;
 
-// Instancie le connecteur une seule fois, d'apres l'environnement.
+// Creates the connector once from the environment configuration.
 function getConnector(): DiscogsConnector {
   if (!connector) {
     connector = createDiscogsConnector({
@@ -47,7 +47,7 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
     return getConnector().mode;
   },
 
-  // Toutes les operations passent par ici : un tenant inconnu ou inactif est rejete.
+  // Every operation passes through this guard, which rejects unknown or inactive tenants.
   async requireTenant(tenantId: string | undefined) {
     if (!tenantId) {
       throw new ValidationError('tenantId is required');
@@ -174,8 +174,8 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
       throw new NotFoundError(`Discogs release ${releaseId} not found`);
     }
 
-    // On complete la fiche avec les infos de la release sans ecraser
-    // ce que le vendeur a deja saisi.
+    // Enriches the product with release metadata without overwriting values
+    // that the seller already entered.
     const updated = await strapi.documents('api::product.product').update({
       documentId: product.documentId,
       data: {

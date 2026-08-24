@@ -1,30 +1,30 @@
-# Parcours de test Discogs — a jouer dans l'ordre avec l'extension VS Code "REST Client"
-# (ou copier les appels dans Postman / curl).
+# Marketplace test workflow — run in order with the VS Code REST Client extension
+# (or copy the requests into Postman / curl).
 #
-# Remplacer les 3 variables ci-dessous par les documentIds affiches dans les logs
-# du seed au demarrage du backend, puis par ceux renvoyes par les creations.
+# Replace the three variables below with documentIds printed by the startup seed,
+# then with the identifiers returned by the create requests.
 
 @baseUrl = http://localhost:1337/api
 @tenantId = REMPLACER_PAR_DOCUMENT_ID_TENANT
 @productId = REMPLACER_PAR_DOCUMENT_ID_PRODUCT
 @unitId = REMPLACER_PAR_DOCUMENT_ID_UNIT
 
-### 0. Mode du connecteur (mock ou real)
+### 0. Connector mode
 GET {{baseUrl}}/discogs/info
 
-### 1. Tenant de demo (recupere son documentId ici si besoin)
+### 1. Demo tenant (retrieve its documentId here if needed)
 GET {{baseUrl}}/tenants?filters[slug][$eq]=demo-records
 
-### 2. Rechercher une release Discogs
+### 2. Search for a release
 GET {{baseUrl}}/discogs/search?tenantId={{tenantId}}&q=daft punk discovery
 
-### 3. Associer la release 123456 a la fiche produit
+### 3. Attach release 123456 to the product
 POST {{baseUrl}}/products/{{productId}}/attach-discogs-release
 Content-Type: application/json
 
 { "tenantId": "{{tenantId}}", "releaseId": "123456" }
 
-### 4. (Option) Creer une nouvelle unite vendable — le SKU est genere par le backend
+### 4. (Optional) Create a sellable unit — the backend allocates the SKU
 POST {{baseUrl}}/sellable-units
 Content-Type: application/json
 
@@ -41,26 +41,26 @@ Content-Type: application/json
   }
 }
 
-### 5. Verifier la completude Discogs de l'unite
+### 5. Check the unit's marketplace completeness
 POST {{baseUrl}}/sellable-units/{{unitId}}/check-discogs-completeness
 Content-Type: application/json
 
 { "tenantId": "{{tenantId}}" }
 
-### 6. Publier l'unite sur Discogs (mock par defaut)
+### 6. Publish the unit to the mock marketplace
 POST {{baseUrl}}/sellable-units/{{unitId}}/publish-discogs
 Content-Type: application/json
 
 { "tenantId": "{{tenantId}}" }
 
-### 7. Consulter les listings publies
+### 7. List published marketplace listings
 GET {{baseUrl}}/discogs/listings?tenantId={{tenantId}}&status=published
 
-### 8. Simuler une vente Discogs (unite -> sold, listing -> removed)
+### 8. Simulate a sale (unit -> sold, listing -> removed)
 POST {{baseUrl}}/sellable-units/{{unitId}}/simulate-discogs-sale
 Content-Type: application/json
 
 { "tenantId": "{{tenantId}}" }
 
-### 9. Journal des evenements de synchronisation
+### 9. Read the synchronization event log
 GET {{baseUrl}}/marketplace-sync-events?sort=happenedAt:desc&pagination[pageSize]=20

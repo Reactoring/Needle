@@ -1,7 +1,7 @@
 import type { Core } from '@strapi/strapi';
 
-// Le tenant est passe explicitement sur chaque appel (query ou body) :
-// pas de tenant, pas de donnee.
+// Every call explicitly carries its tenant in the query or body. Requests
+// without a tenant scope cannot access data.
 function tenantIdFrom(ctx: any): string | undefined {
   return ctx.request.query?.tenantId ?? ctx.request.body?.tenantId;
 }

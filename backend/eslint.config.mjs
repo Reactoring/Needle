@@ -24,8 +24,8 @@ export default tseslint.config(
   },
   {
     rules: {
-      // Les payloads Strapi (documents API, contexts Koa) sont types de facon
-      // trop lache pour se passer de any dans un test de cette taille.
+      // Strapi payloads (Document Service entities and Koa contexts) are too
+      // loosely typed to avoid any in a demo of this size.
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
     },

@@ -13,7 +13,7 @@ export default function App() {
   const [tab, setTab] = useState<Tab>('catalog');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  // Incremente a chaque action pour rafraichir les listes des deux vues.
+  // Incremented after each action to refresh the lists in both views.
   const [refreshKey, setRefreshKey] = useState(0);
   const refresh = useCallback(() => setRefreshKey((key) => key + 1), []);
 

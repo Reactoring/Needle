@@ -1,9 +1,9 @@
 import type { Core } from '@strapi/strapi';
 
-// Creation optionnelle du premier compte admin via l'environnement.
-// Pensee pour le deploiement : sans ADMIN_EMAIL / ADMIN_PASSWORD, on ne fait
-// rien et l'ecran classique "creer le premier administrateur" reste disponible
-// (cas de l'installation locale). Ne touche jamais a un admin existant.
+// Optionally creates the first admin account from environment variables.
+// This is intended for deployment: without ADMIN_EMAIL / ADMIN_PASSWORD, the
+// standard "create the first administrator" screen remains available for a
+// local installation. Existing administrators are never modified.
 export async function ensureAdminUser(strapi: Core.Strapi) {
   const email = process.env.ADMIN_EMAIL;
   const password = process.env.ADMIN_PASSWORD;

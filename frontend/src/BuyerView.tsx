@@ -9,8 +9,8 @@ interface Props {
   onChanged: () => void;
 }
 
-// Vue "acheteur" : joue le role de la marketplace Discogs dans la demo.
-// Le bouton Acheter declenche la simulation de vente cote backend.
+// Buyer view: represents the simulated Discogs marketplace in the demo.
+// The purchase button triggers the backend sale simulation.
 export function BuyerView({ tenant, refreshKey, onChanged }: Props) {
   const [published, setPublished] = useState<Listing[]>([]);
   const [removed, setRemoved] = useState<Listing[]>([]);

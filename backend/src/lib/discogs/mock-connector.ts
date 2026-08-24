@@ -6,7 +6,7 @@ import type {
   PublishListingInput,
 } from './types';
 
-// Petit catalogue en dur, suffisant pour derouler tout le workflow sans reseau.
+// Small in-memory catalog that exercises the complete workflow without a network.
 const MOCK_RELEASES: DiscogsRelease[] = [
   {
     releaseId: '123456',
@@ -132,8 +132,8 @@ const MOCK_RELEASES: DiscogsRelease[] = [
   },
 ];
 
-// L'id de listing est derive du numero de SKU (VIN-000001 -> discogs-listing-0001)
-// pour rester deterministe entre deux redemarrages.
+// Derives the listing ID from the SKU number (VIN-000001 -> discogs-listing-0001)
+// so the fixture stays deterministic across restarts.
 function listingIdFromSku(sku: string): string {
   const digits = sku.match(/(\d+)$/)?.[1] ?? '1';
   return `discogs-listing-${String(parseInt(digits, 10)).padStart(4, '0')}`;

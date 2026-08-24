@@ -1,4 +1,4 @@
-// Endpoints du workflow Discogs.
+// Endpoints for the simulated marketplace workflow.
 export default {
   routes: [
     {

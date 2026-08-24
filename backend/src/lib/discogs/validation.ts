@@ -20,8 +20,8 @@ export interface CompletenessResult {
   errors: string[];
 }
 
-// Regles minimales pour qu'une annonce Discogs soit publiable :
-// une release associee, un grading media/pochette et un prix valide.
+// Minimum requirements for a publishable marketplace listing: an attached
+// release, media and sleeve grading, and a valid price.
 export function validateListingPayload(
   unit: UnitForValidation,
   product: ProductForValidation | null | undefined,
