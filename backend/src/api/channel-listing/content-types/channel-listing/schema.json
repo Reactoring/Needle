@@ -14,13 +14,15 @@
     "tenant": {
       "type": "relation",
       "relation": "manyToOne",
-      "target": "api::tenant.tenant"
+      "target": "api::tenant.tenant",
+      "required": true
     },
     "sellableUnit": {
       "type": "relation",
       "relation": "manyToOne",
       "target": "api::sellable-unit.sellable-unit",
-      "inversedBy": "channelListings"
+      "inversedBy": "channelListings",
+      "required": true
     },
     "channel": {
       "type": "enumeration",

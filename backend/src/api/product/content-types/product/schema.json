@@ -14,7 +14,8 @@
     "tenant": {
       "type": "relation",
       "relation": "manyToOne",
-      "target": "api::tenant.tenant"
+      "target": "api::tenant.tenant",
+      "required": true
     },
     "productType": {
       "type": "enumeration",

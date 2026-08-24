@@ -14,7 +14,8 @@
     "tenant": {
       "type": "relation",
       "relation": "manyToOne",
-      "target": "api::tenant.tenant"
+      "target": "api::tenant.tenant",
+      "required": true
     },
     "channel": {
       "type": "enumeration",
@@ -58,7 +59,8 @@
       "type": "text"
     },
     "payload": {
-      "type": "json"
+      "type": "json",
+      "private": true
     },
     "happenedAt": {
       "type": "datetime",

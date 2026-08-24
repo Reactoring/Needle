@@ -2,17 +2,9 @@ import type { Core } from '@strapi/strapi';
 import { errors } from '@strapi/utils';
 import { DEMO_TENANT_SLUGS } from '../bootstrap/seed';
 import { isDemoUser } from '../lib/demo-session';
+import { requestedTenantId } from '../lib/tenant-scope';
 
 const { ForbiddenError, ValidationError } = errors;
-
-function requestedTenantId(ctx: any): string | undefined {
-  return (
-    ctx.request.query?.tenantId ??
-    ctx.request.body?.tenantId ??
-    ctx.request.body?.data?.tenant ??
-    ctx.request.query?.filters?.tenant?.documentId?.$eq
-  );
-}
 
 export default async (
   policyContext: any,
@@ -24,7 +16,7 @@ export default async (
   }
 
   const tenants = await strapi.documents('api::tenant.tenant').findMany({
-    filters: { slug: { $in: [...DEMO_TENANT_SLUGS] } },
+    filters: { slug: { $in: [...DEMO_TENANT_SLUGS] }, active: { $eq: true } },
     pagination: { pageSize: DEMO_TENANT_SLUGS.length },
   });
   const allowedTenantIds = tenants.map((tenant) => tenant.documentId);

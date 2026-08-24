@@ -14,13 +14,15 @@
     "tenant": {
       "type": "relation",
       "relation": "manyToOne",
-      "target": "api::tenant.tenant"
+      "target": "api::tenant.tenant",
+      "required": true
     },
     "product": {
       "type": "relation",
       "relation": "manyToOne",
       "target": "api::product.product",
-      "inversedBy": "sellableUnits"
+      "inversedBy": "sellableUnits",
+      "required": true
     },
     "sku": {
       "type": "string",
