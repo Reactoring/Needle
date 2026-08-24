@@ -17,12 +17,18 @@ async function main() {
     const service = app.service('api::demo.demo');
     await service[command]();
     console.log(`Demo data ${command} completed.`);
+    // Document service events (lifecycles, webhooks) are emitted asynchronously;
+    // give them a moment to drain before closing the connection pool.
+    await new Promise((resolve) => setTimeout(resolve, 2000));
   } finally {
     await app.destroy();
   }
 }
 
-main().catch((error) => {
-  console.error(error);
-  process.exit(1);
-});
+main().then(
+  () => process.exit(0),
+  (error) => {
+    console.error(error);
+    process.exit(1);
+  },
+);
