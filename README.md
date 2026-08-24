@@ -1,126 +1,313 @@
-# Vinyl Backoffice — Strapi + Discogs
+# Needle — backoffice vinyle multi-tenant
 
-Tranche verticale d'un backoffice multi-tenant de gestion de vinyles avec publication sur la marketplace Discogs : séparation fiche catalogue / unité vendable / listing marketplace, connecteur Discogs mockable, logs de synchronisation persistants.
+Démo complète d’un backoffice de disquaire construit avec Strapi 5, PostgreSQL, React et
+TypeScript. Elle montre deux boutiques réellement isolées, un catalogue illustré, des
+exemplaires physiques avec SKU et un workflow Marketplace entièrement simulé.
+
+La démo est volontairement accessible sans mot de passe, mais les routes métier ne sont pas
+publiques : le navigateur ouvre d’abord une session Strapi limitée aux deux tenants de
+démonstration.
+
+## Ce que la démo permet de vérifier
+
+| Sujet         | Comportement                                                                       |
+| ------------- | ---------------------------------------------------------------------------------- |
+| Multi-tenant  | Sélecteur entre **Demo Records** et **Second Groove**, données et journaux séparés |
+| Catalogue     | 4 fiches fictives par boutique, pochettes générées, recherche et ajout de fiche    |
+| Stock         | Unités physiques distinctes, état disque/pochette, prix et statut de stock         |
+| SKU           | Attribution PostgreSQL sûre en concurrence : `VIN-000001`, `VIN-000002`…           |
+| Marketplace   | Recherche de release, association, complétude, publication et vente simulées       |
+| Audit         | Événements persistants et scopés par tenant                                        |
+| Sécurité démo | Cookie HTTP-only, rôle dédié, policy tenant et routes métier authentifiées         |
+
+Il n’existe **aucun mode Discogs réel** dans ce projet. `DISCOGS_MODE=mock` est la seule
+valeur acceptée ; toute autre valeur bloque le démarrage du connecteur. Aucun token Discogs
+n’est demandé et aucune requête n’est envoyée à Discogs. Les URL externes générées utilisent
+le domaine non routable `example.invalid`.
 
 ## Stack
 
-| Composant | Techno | Dossier |
-|---|---|---|
-| Backend | Strapi 5 (TypeScript) + PostgreSQL 16 | [`backend/`](backend/) |
-| Frontend démo | React + Vite (TypeScript) | [`frontend/`](frontend/) |
-| Base de données | PostgreSQL via Docker Compose | [`docker-compose.yml`](docker-compose.yml) |
+| Composant | Technologie                               | Dossier                                    |
+| --------- | ----------------------------------------- | ------------------------------------------ |
+| Backend   | Strapi 5, TypeScript, Users & Permissions | [`backend/`](backend/)                     |
+| Frontend  | React 19, Vite, TypeScript                | [`frontend/`](frontend/)                   |
+| Base      | PostgreSQL 16                             | [`docker-compose.yml`](docker-compose.yml) |
+| Tests     | Vitest et scénario E2E Node               | [`backend/tests/`](backend/tests/)         |
 
-## Architecture
+PostgreSQL est requis : l’allocation des SKU et les verrous transactionnels utilisent des
+fonctionnalités PostgreSQL.
+
+## Modèle de données
 
 ```mermaid
 erDiagram
-    TENANT ||--o{ PRODUCT : "possede"
-    TENANT ||--o{ SELLABLE_UNIT : "possede"
-    TENANT ||--o{ CHANNEL_LISTING : "possede"
-    TENANT ||--o{ SYNC_EVENT : "possede"
-    PRODUCT ||--o{ SELLABLE_UNIT : "fiche -> exemplaires"
-    SELLABLE_UNIT ||--o{ CHANNEL_LISTING : "publie sur un canal"
-    SYNC_EVENT }o--|| PRODUCT : "reference"
-    SYNC_EVENT }o--|| SELLABLE_UNIT : "reference"
-    SYNC_EVENT }o--|| CHANNEL_LISTING : "reference"
+    TENANT ||--o{ PRODUCT : "possède"
+    TENANT ||--o{ SELLABLE_UNIT : "possède"
+    TENANT ||--o{ CHANNEL_LISTING : "possède"
+    TENANT ||--o{ SYNC_EVENT : "possède"
+    PRODUCT ||--o{ SELLABLE_UNIT : "décrit"
+    SELLABLE_UNIT ||--o| CHANNEL_LISTING : "est publiée"
+    PRODUCT ||--o{ SYNC_EVENT : "est auditée"
+    SELLABLE_UNIT ||--o{ SYNC_EVENT : "est auditée"
+    CHANNEL_LISTING ||--o{ SYNC_EVENT : "est auditée"
 ```
 
-- **Product** : la fiche catalogue (titre, artiste, label, `discogsReleaseId`…). Une fiche, N exemplaires.
-- **SellableUnit** : l'exemplaire physique vendu — SKU auto-généré (`VIN-000001`), prix, états disque/pochette, statut de vente.
-- **ChannelListing** : l'annonce publiée sur un canal (`discogs`), avec `externalListingId`, statut et dernière synchro.
-- **MarketplaceSyncEvent** : journal persistant de chaque opération (recherche, association, complétude, publication, vente, mise hors stock).
-- Tous les objets portent un `tenant` et **toutes les requêtes métier sont scopées par tenant** (voir `backend/src/api/discogs/services/discogs.ts`).
+- **Tenant** : boutique propriétaire des données.
+- **Product** : fiche catalogue commune à plusieurs exemplaires.
+- **SellableUnit** : exemplaire physique vendable avec SKU, prix, grading et stock.
+- **ChannelListing** : annonce Marketplace unique pour un exemplaire.
+- **MarketplaceSyncEvent** : trace d’une recherche, association, vérification, publication ou
+  vente simulée.
 
-La logique Discogs est isolée dans [`backend/src/lib/discogs/`](backend/src/lib/discogs/) derrière une interface `DiscogsConnector` avec deux implémentations choisies par variable d'environnement :
+Les relations `tenant`, `product` et `sellableUnit` importantes sont obligatoires en base.
+Les contrôleurs n’acceptent qu’une liste blanche de champs et ajoutent le filtre tenant côté
+serveur.
 
-- **`DISCOGS_MODE=mock`** (défaut) : aucune requête réseau, catalogue de test embarqué (Daft Punk — Discovery, release `123456`).
-- **`DISCOGS_MODE=real`** : recherche et lecture de releases via l'API Discogs (token requis). La **publication reste simulée même en mode réel** — on ne crée pas de vraies annonces sur la marketplace.
+## Pourquoi l’accès direct sans mot de passe reste authentifié
 
-## Démarrage
+Le seul endpoint métier volontairement public est `POST /api/demo/session`. Il ne donne pas
+un accès anonyme aux données : il crée une session courte pour un utilisateur Strapi dédié.
 
-Prérequis : Node.js ≥ 20, Docker.
+```mermaid
+sequenceDiagram
+    participant B as Navigateur
+    participant S as POST /api/demo/session
+    participant A as Auth Strapi
+    participant P as Policy tenant
+    participant D as Données métier
+
+    B->>S: Ouvre la démo sans mot de passe
+    S->>A: Émet un JWT pour le rôle demo
+    S-->>B: Cookie vinyl_demo_session HTTP-only
+    B->>A: Requête métier avec le cookie
+    A->>P: Utilisateur demo authentifié
+    P->>P: Tenant dans la liste autorisée ?
+    P->>D: Requête forcée sur ce tenant
+    D-->>B: Données de la boutique active
+```
+
+Concrètement :
+
+- le cookie expire après 30 minutes ;
+- il est `HTTP-only`, `SameSite=Lax` et devient `Secure` avec
+  `NODE_ENV=production` ;
+- le middleware traduit ce cookie en authentification Bearer interne avant Users & Permissions ;
+- le rôle `demo` possède uniquement les actions nécessaires à l’interface ;
+- les permissions du rôle public sont révoquées au bootstrap ;
+- la policy accepte uniquement les tenants actifs `demo-records` et `second-groove` ;
+- une requête anonyme vers `/api/tenants` reçoit `401` ;
+- demander un troisième tenant avec la session démo reçoit `403`.
+
+Ce mécanisme est adapté à une **démo publique contenant uniquement des données fictives**. Ce
+n’est pas le système d’authentification d’un SaaS réel : un vrai tenant devrait être
+provisionné avec ses propres utilisateurs, rôles et parcours de connexion. La route de création
+de tenant n’est d’ailleurs pas exposée par cette démo.
+
+## Les deux tenants de démonstration
+
+`npm run demo:setup` et le seed local créent tous les deux :
+
+- **Demo Records** (`demo-records`) : Night Transit, Static Bloom, Orbits et Concrete Seasons ;
+- **Second Groove** (`second-groove`) : Cold Signals, Sunday Lines, Soft Collision et Glass
+  District.
+
+Chaque boutique possède ses propres produits, exemplaires, annonces et événements. Le
+sélecteur du header recharge les données depuis l’API ; il ne s’agit pas d’un simple filtre
+visuel.
+
+Douze pochettes abstraites fictives sont stockées dans
+[`frontend/public/demo-covers/`](frontend/public/demo-covers/). Les huit fiches seedées ont
+une pochette fixe ; une fiche ajoutée pendant la démo reçoit une illustration de secours
+déterministe.
+
+## Démarrage local
+
+Prérequis : Node.js 20 à 26, npm et PostgreSQL 16. Docker est pratique mais pas obligatoire si
+une instance PostgreSQL compatible est déjà disponible.
 
 ```bash
 # 1. PostgreSQL
 docker compose up -d
 
-# 2. Backend Strapi (http://localhost:1337)
+# 2. Backend
 cd backend
-cp .env.example .env    # renseigner des secrets uniques (voir commentaires du fichier)
+cp .env.example .env
 npm install
 npm run develop
+```
 
-# 3. Frontend démo (http://localhost:5173) — dans un second terminal
+Dans un second terminal :
+
+```bash
 cd frontend
+cp .env.example .env
 npm install
 npm run dev
 ```
 
-Au premier lancement du backend :
+Ouvrir ensuite [http://localhost:5173](http://localhost:5173). Le backend écoute sur
+[http://localhost:1337](http://localhost:1337) et l’administration Strapi sur
+[http://localhost:1337/admin](http://localhost:1337/admin).
 
-- l'admin Strapi est sur http://localhost:1337/admin (création du premier compte au premier accès). En déploiement, définir `ADMIN_EMAIL`/`ADMIN_PASSWORD` crée ce compte automatiquement au démarrage pour ne jamais exposer l'écran d'inscription en ligne ;
-- un **seed idempotent** crée le tenant `Demo Records` avec une fiche « Daft Punk — Discovery » et un exemplaire prêt à publier. Les `documentId` sont affichés dans les logs de démarrage (`[seed] …`).
+### Seed automatique en local
 
-> Note démo : les endpoints du workflow et la lecture des modèles métier sont ouverts au rôle public pour dérouler le test sans token API (`backend/src/bootstrap/public-permissions.ts`). En production, ils seraient derrière une vraie gestion de rôles.
+Au démarrage du backend, le seed est lancé automatiquement uniquement si :
 
-## Parcours de test
+```text
+NODE_ENV != production
+et
+DEMO_AUTO_SEED != false
+```
 
-### Via le frontend (le plus rapide)
+Il est idempotent : plusieurs démarrages ne dupliquent ni tenants, ni produits, ni annonces.
+Pour désactiver l’auto-seed local :
 
-1. Ouvrir http://localhost:5173 — vue **Boutique (vendeur)**.
-2. La fiche seedée « Daft Punk — Discovery » est sélectionnée : chercher la release (champ pré-rempli) puis **Associer** la release `123456`.
-3. **Vérifier complétude** sur l'exemplaire (SKU `VIN-000001`, généré par le backend), puis **Publier sur Discogs**.
-4. Passer sur l'onglet **Marketplace — simulation Discogs** : l'annonce `discogs-listing-0001` est en vente. Cliquer **Acheter**.
-5. Retour vue vendeur : l'exemplaire est **Vendu**, et la timeline de droite montre tous les événements journalisés (recherche, association, complétude, publication, vente, mise hors stock).
+```dotenv
+DEMO_AUTO_SEED=false
+```
 
-### Via l'API
+La commande manuelle idempotente reste disponible :
 
-Le fichier [`backend/requests.http`](backend/requests.http) contient les appels dans l'ordre (extension VS Code REST Client, ou à copier dans Postman) :
+```bash
+cd backend
+npm run demo:setup
+```
 
-| Étape | Endpoint |
-|---|---|
-| Recherche release | `GET /api/discogs/search?tenantId=…&q=…` |
-| Association release | `POST /api/products/:id/attach-discogs-release` |
-| Création exemplaire (SKU auto) | `POST /api/sellable-units` |
-| Vérification complétude | `POST /api/sellable-units/:id/check-discogs-completeness` |
-| Publication | `POST /api/sellable-units/:id/publish-discogs` |
-| Listings publiés | `GET /api/discogs/listings?tenantId=…&status=published` |
-| Simulation de vente | `POST /api/sellable-units/:id/simulate-discogs-sale` |
-| Journal de synchro | `GET /api/marketplace-sync-events?sort=happenedAt:desc` |
+Pour restaurer exactement l’état initial des deux boutiques :
 
-### Workflow automatisé de bout en bout
+```bash
+npm run demo:reset
+```
 
-Backend démarré :
+`demo:reset` supprime puis recrée uniquement les objets appartenant aux slugs
+`demo-records` et `second-groove`. Les autres tenants éventuels ne sont pas supprimés. La
+séquence SKU ne repart de 1 que lorsqu’aucun autre exemplaire n’existe.
+
+## Déploiement de la démo
+
+En production, le seed automatique est **toujours désactivé**, même si
+`DEMO_AUTO_SEED=true`. La démo peut donc rester déployée sans mutation automatique au
+redémarrage.
+
+Après les migrations et avec les variables de production chargées, provisionner
+intentionnellement les deux tenants une seule fois :
+
+```bash
+cd backend
+NODE_ENV=production npm run demo:setup
+```
+
+Sous PowerShell :
+
+```powershell
+$env:NODE_ENV = "production"
+npm run demo:setup
+```
+
+La commande peut être rejouée sans duplication. `npm run demo:reset` doit rester une action
+manuelle et explicite, réservée à la restauration de la démo.
+
+Pour la session cookie en production :
+
+- servir le frontend et l’API en HTTPS ;
+- les héberger sous le même site (par exemple `app.example.com` et `api.example.com`) afin de
+  respecter `SameSite=Lax` ;
+- définir `FRONTEND_URL` avec l’origine exacte du frontend ;
+- conserver `NODE_ENV=production` pour activer l’attribut `Secure` ;
+- définir des secrets Strapi uniques et non versionnés ;
+- limiter au besoin `POST /api/demo/session` au niveau du reverse proxy si la démo est
+  publique à fort trafic.
+
+Les variables sont détaillées dans
+[`backend/.env.example`](backend/.env.example) et
+[`frontend/.env.example`](frontend/.env.example).
+
+### Administration Strapi
+
+L’admin Strapi est indépendant de la session visiteur. En local, laisser `ADMIN_EMAIL` et
+`ADMIN_PASSWORD` vides permet de créer le premier administrateur sur `/admin`. Pour un
+déploiement neuf, renseigner les deux variables crée automatiquement le premier super-admin
+et évite d’exposer l’écran d’inscription. Un administrateur existant n’est jamais modifié.
+
+## Workflow Marketplace simulé
+
+1. Choisir la boutique active.
+2. Sélectionner ou créer une fiche catalogue.
+3. Rechercher puis associer une release du catalogue embarqué.
+4. Ajouter un exemplaire ; le backend attribue son SKU.
+5. Vérifier sa complétude.
+6. Publier l’annonce mock.
+7. Passer sur l’onglet Marketplace et simuler l’achat.
+8. Vérifier séparément le statut de stock et le statut de l’annonce.
+9. Consulter l’événement d’audit dans la boutique concernée.
+
+La publication et la vente utilisent une transaction PostgreSQL et un verrou transactionnel
+par exemplaire. Les appels concurrents convergent donc vers une annonce, une vente et un
+événement de chaque type. La base impose aussi l’unicité du SKU et d’une annonce par
+exemplaire.
+
+## API de démonstration
+
+Le fichier [`backend/requests.http`](backend/requests.http) contient un parcours compatible
+avec l’extension VS Code REST Client. La première requête ouvre la session ; le cookie jar du
+client est ensuite réutilisé automatiquement.
+
+Principaux endpoints :
+
+| Méthode    | Endpoint                                             | Accès                                 |
+| ---------- | ---------------------------------------------------- | ------------------------------------- |
+| `POST`     | `/api/demo/session`                                  | Bootstrap public, retourne le cookie  |
+| `GET`      | `/api/tenants`                                       | Session démo                          |
+| `GET/POST` | `/api/products`                                      | Session + tenant autorisé             |
+| `GET/POST` | `/api/sellable-units`                                | Session + tenant autorisé             |
+| `GET`      | `/api/discogs/search`                                | Session + tenant autorisé, mock local |
+| `POST`     | `/api/products/:id/attach-discogs-release`           | Session + cohérence tenant            |
+| `POST`     | `/api/sellable-units/:id/check-discogs-completeness` | Session + tenant                      |
+| `POST`     | `/api/sellable-units/:id/publish-discogs`            | Session + transaction                 |
+| `POST`     | `/api/sellable-units/:id/simulate-discogs-sale`      | Session + transaction                 |
+| `GET`      | `/api/marketplace-sync-events`                       | Session + filtre tenant forcé         |
+
+## Tests et qualité
+
+```bash
+cd backend
+npm run lint
+npx tsc --noEmit
+npm test
+```
+
+La suite contient **31 tests unitaires** couvrant notamment l’identité démo, le cookie, la
+policy tenant, la normalisation des relations, le refus du mode réel, la validation de
+complétude et le format des SKU.
+
+Avec le backend démarré :
 
 ```bash
 cd backend
 npm run e2e
 ```
 
-Le script (`backend/scripts/e2e-workflow.mjs`) rejoue les 12 étapes du parcours — création de fiche, recherche, association, création d'unité, complétude, publication, vente simulée — et vérifie les statuts et les événements journalisés.
+Le scénario vérifie **19 invariants** : refus anonyme, cookie HTTP-only, exactement deux
+tenants, rejet inter-tenant, 8 SKU créés en parallèle, publication concurrente idempotente,
+vente concurrente idempotente et unicité des événements. Il crée des données temporaires dans
+`Demo Records` ; exécuter `npm run demo:reset` après un test manuel si l’état initial est
+souhaité.
 
-## Tests
+Pour le frontend :
 
 ```bash
-cd backend
-npm test
+cd frontend
+npm run lint
+npm run build
 ```
 
-19 tests unitaires (Vitest) couvrent la génération de SKU, la validation de complétude Discogs et le connecteur mock. La CI GitHub Actions ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) exécute type-check + tests à chaque push.
+## Frontières assumées
 
-## Variables d'environnement
-
-Documentées dans [`backend/.env.example`](backend/.env.example) et [`frontend/.env.example`](frontend/.env.example). Aucun secret n'est versionné. Pour activer l'API Discogs réelle :
-
-```
-DISCOGS_MODE=real
-DISCOGS_TOKEN=<token personnel Discogs (Settings > Developers)>
-```
-
-## Choix d'implémentation
-
-- **SKU côté backend** : lifecycle `beforeCreate` de `sellable-unit` — toute valeur saisie est écrasée ; la contrainte d'unicité en base sert de garde-fou en cas de création concurrente.
-- **Scoping tenant explicite** : chaque opération du service Discogs exige un `tenantId`, vérifie que le tenant existe et est actif, et filtre les entités par tenant — un objet d'un autre tenant renvoie 404.
-- **Écritures Discogs toujours simulées** : même en mode réel, `publishListing` ne crée pas d'annonce — décision assumée pour un test technique (les lectures suffisent à prouver l'intégration).
-- **Id de listing mock déterministe** : dérivé du SKU (`VIN-000001` → `discogs-listing-0001`) pour rester stable entre deux redémarrages.
-- **Hors scope respecté** : pas de Fnac/Amazon/Stripe/commandes/BullMQ/S3, conformément à l'énoncé.
+- La démo ne contient ni paiement, ni vraie commande, ni synchronisation externe.
+- La « vente » est un changement atomique local de stock et de statut d’annonce.
+- Le compte visiteur est partagé et sans mot de passe : toute personne ayant accès à la démo
+  peut modifier ses données fictives.
+- La session démo ne doit jamais être élargie à un tenant client réel.
+- Les pochettes sont des illustrations fictives générées pour ce projet, sans reprendre de
+  pochette existante.
+- Le payload brut des événements d’audit est privé ; seuls les champs utiles sont exposés.

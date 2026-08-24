@@ -9,22 +9,25 @@
 @productId = REMPLACER_PAR_DOCUMENT_ID_PRODUCT
 @unitId = REMPLACER_PAR_DOCUMENT_ID_UNIT
 
-### 0. Connector mode
+### 0. Open the passwordless demo session (REST Client keeps the cookie)
+POST {{baseUrl}}/demo/session
+
+### 1. Connector mode
 GET {{baseUrl}}/discogs/info
 
-### 1. Demo tenant (retrieve its documentId here if needed)
+### 2. Demo tenant (retrieve its documentId here if needed)
 GET {{baseUrl}}/tenants?filters[slug][$eq]=demo-records
 
-### 2. Search for a release
-GET {{baseUrl}}/discogs/search?tenantId={{tenantId}}&q=daft punk discovery
+### 3. Search for a fictional release
+GET {{baseUrl}}/discogs/search?tenantId={{tenantId}}&q=night transit
 
-### 3. Attach release 123456 to the product
+### 4. Attach release 910001 to the product
 POST {{baseUrl}}/products/{{productId}}/attach-discogs-release
 Content-Type: application/json
 
-{ "tenantId": "{{tenantId}}", "releaseId": "123456" }
+{ "tenantId": "{{tenantId}}", "releaseId": "910001" }
 
-### 4. (Optional) Create a sellable unit — the backend allocates the SKU
+### 5. (Optional) Create a sellable unit — the backend allocates the SKU
 POST {{baseUrl}}/sellable-units
 Content-Type: application/json
 
@@ -41,26 +44,26 @@ Content-Type: application/json
   }
 }
 
-### 5. Check the unit's marketplace completeness
+### 6. Check the unit's marketplace completeness
 POST {{baseUrl}}/sellable-units/{{unitId}}/check-discogs-completeness
 Content-Type: application/json
 
 { "tenantId": "{{tenantId}}" }
 
-### 6. Publish the unit to the mock marketplace
+### 7. Publish the unit to the mock marketplace
 POST {{baseUrl}}/sellable-units/{{unitId}}/publish-discogs
 Content-Type: application/json
 
 { "tenantId": "{{tenantId}}" }
 
-### 7. List published marketplace listings
+### 8. List published marketplace listings
 GET {{baseUrl}}/discogs/listings?tenantId={{tenantId}}&status=published
 
-### 8. Simulate a sale (unit -> sold, listing -> removed)
+### 9. Simulate a sale (unit -> sold, listing -> removed)
 POST {{baseUrl}}/sellable-units/{{unitId}}/simulate-discogs-sale
 Content-Type: application/json
 
 { "tenantId": "{{tenantId}}" }
 
-### 9. Read the synchronization event log
-GET {{baseUrl}}/marketplace-sync-events?sort=happenedAt:desc&pagination[pageSize]=20
+### 10. Read the tenant-scoped synchronization event log
+GET {{baseUrl}}/marketplace-sync-events?filters[tenant][documentId][$eq]={{tenantId}}&sort=happenedAt:desc&pagination[pageSize]=20
