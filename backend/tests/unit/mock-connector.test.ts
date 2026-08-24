@@ -28,6 +28,14 @@ describe('mock discogs connector', () => {
     expect(byTitle.map((r) => r.releaseId)).toContain('123456');
   });
 
+  it('finds releases for the two seeded products awaiting association', async () => {
+    const orbits = await connector.searchReleases('Lila Nova Orbits');
+    const softCollision = await connector.searchReleases('Paper Satellites Soft Collision');
+
+    expect(orbits.map((release) => release.releaseId)).toContain('910004');
+    expect(softCollision.map((release) => release.releaseId)).toContain('920004');
+  });
+
   it('returns an empty list for a blank query', async () => {
     expect(await connector.searchReleases('   ')).toEqual([]);
   });

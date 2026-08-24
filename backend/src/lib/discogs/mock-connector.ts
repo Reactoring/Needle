@@ -95,6 +95,18 @@ const MOCK_RELEASES: DiscogsRelease[] = [
     styles: ['Post-Punk'],
   },
   {
+    releaseId: '910004',
+    masterId: '91003',
+    title: 'Orbits',
+    artist: 'Lila Nova',
+    year: 2022,
+    country: 'France',
+    format: 'LP',
+    label: 'Parallel Lines',
+    genres: ['Electronic'],
+    styles: ['Synth-pop', 'Dream Pop'],
+  },
+  {
     releaseId: '920001',
     masterId: '92000',
     title: 'Cold Signals',
@@ -129,6 +141,18 @@ const MOCK_RELEASES: DiscogsRelease[] = [
     label: 'Halflight Editions',
     genres: ['Electronic'],
     styles: ['Ambient', 'Synth-pop'],
+  },
+  {
+    releaseId: '920004',
+    masterId: '92003',
+    title: 'Soft Collision',
+    artist: 'Paper Satellites',
+    year: 2015,
+    country: 'Canada',
+    format: 'LP',
+    label: 'Quiet Current',
+    genres: ['Rock'],
+    styles: ['Dream Pop', 'Shoegaze'],
   },
 ];
 
