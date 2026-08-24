@@ -1,9 +1,21 @@
 import { describe, it, expect } from 'vitest';
+import { createDiscogsConnector } from '../../src/lib/discogs';
 import { createMockConnector } from '../../src/lib/discogs/mock-connector';
 
 const connector = createMockConnector();
 
 describe('mock discogs connector', () => {
+  it('rejects every non-mock integration mode', () => {
+    expect(() => createDiscogsConnector({ mode: 'real' })).toThrow(
+      'Only DISCOGS_MODE=mock is supported by this demo',
+    );
+    expect(() => createDiscogsConnector({ mode: 'api' })).toThrow();
+  });
+
+  it('uses mock mode by default', () => {
+    expect(createDiscogsConnector().mode).toBe('mock');
+  });
+
   it('reports mock mode', () => {
     expect(connector.mode).toBe('mock');
   });
