@@ -51,7 +51,7 @@ export default function App() {
   }
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell theme-${tab}`}>
       <header className="topbar">
         <a className="brand" href="#main-content" aria-label="Aller au contenu">
           <span className="brand-mark" aria-hidden="true">
