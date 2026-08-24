@@ -37,7 +37,6 @@ function getConnector(): DiscogsConnector {
   if (!connector) {
     connector = createDiscogsConnector({
       mode: process.env.DISCOGS_MODE,
-      token: process.env.DISCOGS_TOKEN,
     });
   }
   return connector;
