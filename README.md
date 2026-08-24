@@ -58,7 +58,7 @@ npm run dev
 
 Au premier lancement du backend :
 
-- l'admin Strapi est sur http://localhost:1337/admin (création du premier compte au premier accès) ;
+- l'admin Strapi est sur http://localhost:1337/admin (création du premier compte au premier accès). En déploiement, définir `ADMIN_EMAIL`/`ADMIN_PASSWORD` crée ce compte automatiquement au démarrage pour ne jamais exposer l'écran d'inscription en ligne ;
 - un **seed idempotent** crée le tenant `Demo Records` avec une fiche « Daft Punk — Discovery » et un exemplaire prêt à publier. Les `documentId` sont affichés dans les logs de démarrage (`[seed] …`).
 
 > Note démo : les endpoints du workflow et la lecture des modèles métier sont ouverts au rôle public pour dérouler le test sans token API (`backend/src/bootstrap/public-permissions.ts`). En production, ils seraient derrière une vraie gestion de rôles.
