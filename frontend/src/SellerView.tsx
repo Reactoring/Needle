@@ -963,16 +963,15 @@ function UnitCard({
           </button>
           <button
             className="seller-primary-button"
+            disabled={isPublished}
             onClick={() =>
               run(
                 () => api.publish(tenant.documentId, unit.documentId),
-                isPublished
-                  ? 'Annonce resynchronisée.'
-                  : 'Annonce publiée sur la marketplace mock.',
+                'Annonce publiée sur la marketplace mock.',
               )
             }
           >
-            {isPublished ? 'Resynchroniser' : 'Publier'}
+            {isPublished ? 'Déjà publiée' : 'Publier'}
           </button>
         </div>
       )}
