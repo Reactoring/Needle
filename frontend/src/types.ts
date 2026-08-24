@@ -20,6 +20,7 @@ export interface Product {
   documentId: string;
   title: string;
   artist: string;
+  coverKey?: string | null;
   label?: string | null;
   year?: number | null;
   country?: string | null;

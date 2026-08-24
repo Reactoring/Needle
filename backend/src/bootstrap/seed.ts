@@ -2,6 +2,7 @@ import type { Core } from '@strapi/strapi';
 
 interface DemoProductFixture {
   reference: string;
+  coverKey: string;
   title: string;
   artist: string;
   description: string;
@@ -34,6 +35,7 @@ const DEMO_TENANTS: DemoTenantFixture[] = [
     products: [
       {
         reference: 'DR-001',
+        coverKey: 'night-transit',
         title: 'Night Transit',
         artist: 'Neon Meridian',
         description: 'A warm electronic double album with late-night city textures.',
@@ -52,6 +54,7 @@ const DEMO_TENANTS: DemoTenantFixture[] = [
       },
       {
         reference: 'DR-002',
+        coverKey: 'static-bloom',
         title: 'Static Bloom',
         artist: 'The Amber Echoes',
         description: 'Textured art rock recorded with an intimate analogue sound.',
@@ -69,6 +72,7 @@ const DEMO_TENANTS: DemoTenantFixture[] = [
       },
       {
         reference: 'DR-003',
+        coverKey: 'orbits',
         title: 'Orbits',
         artist: 'Lila Nova',
         description: 'A contemporary synth record awaiting release matching.',
@@ -85,6 +89,7 @@ const DEMO_TENANTS: DemoTenantFixture[] = [
       },
       {
         reference: 'DR-004',
+        coverKey: 'concrete-seasons',
         title: 'Concrete Seasons',
         artist: 'Marble Choir',
         description: 'A sold post-punk title kept to demonstrate listing history.',
@@ -109,6 +114,7 @@ const DEMO_TENANTS: DemoTenantFixture[] = [
     products: [
       {
         reference: 'SG-001',
+        coverKey: 'cold-signals',
         title: 'Cold Signals',
         artist: 'Northbound Assembly',
         description: 'Minimal wave and precise machine rhythms from Berlin.',
@@ -127,6 +133,7 @@ const DEMO_TENANTS: DemoTenantFixture[] = [
       },
       {
         reference: 'SG-002',
+        coverKey: 'sunday-lines',
         title: 'Sunday Lines',
         artist: 'Solara Quartet',
         description: 'A relaxed jazz session with bright Brazilian harmonies.',
@@ -144,6 +151,7 @@ const DEMO_TENANTS: DemoTenantFixture[] = [
       },
       {
         reference: 'SG-003',
+        coverKey: 'soft-collision',
         title: 'Soft Collision',
         artist: 'Paper Satellites',
         description: 'Dream-pop layers awaiting a marketplace release match.',
@@ -160,6 +168,7 @@ const DEMO_TENANTS: DemoTenantFixture[] = [
       },
       {
         reference: 'SG-004',
+        coverKey: 'glass-district',
         title: 'Glass District',
         artist: 'Mira Vale',
         description: 'Luminous ambient pop presented as a ready-to-publish example.',
@@ -191,18 +200,23 @@ async function ensureTenant(strapi: Core.Strapi, fixture: DemoTenantFixture) {
   });
 }
 
-async function ensureProduct(
-  strapi: Core.Strapi,
-  tenantId: string,
-  fixture: DemoProductFixture,
-) {
+async function ensureProduct(strapi: Core.Strapi, tenantId: string, fixture: DemoProductFixture) {
   const existing = await strapi.documents('api::product.product').findFirst({
     filters: {
       tenant: { documentId: { $eq: tenantId } },
       catalogReference: { $eq: fixture.reference },
     },
   });
-  if (existing) return existing;
+  if (existing) {
+    if ((existing as any).coverKey !== fixture.coverKey) {
+      const updated = await strapi.documents('api::product.product').update({
+        documentId: existing.documentId,
+        data: { coverKey: fixture.coverKey } as any,
+      });
+      if (updated) return updated;
+    }
+    return existing;
+  }
 
   return strapi.documents('api::product.product').create({
     data: {
@@ -216,6 +230,7 @@ async function ensureProduct(
       country: fixture.country,
       format: fixture.format,
       catalogReference: fixture.reference,
+      coverKey: fixture.coverKey,
       discogsReleaseId: fixture.releaseId ?? null,
     } as any,
   });
@@ -310,19 +325,8 @@ export async function seedDemoData(strapi: Core.Strapi) {
 
     for (const productFixture of tenantFixture.products) {
       const product = await ensureProduct(strapi, tenant.documentId, productFixture);
-      const unit = await ensureUnit(
-        strapi,
-        tenant.documentId,
-        product.documentId,
-        productFixture,
-      );
-      await ensureListing(
-        strapi,
-        tenant.documentId,
-        product.documentId,
-        unit,
-        productFixture,
-      );
+      const unit = await ensureUnit(strapi, tenant.documentId, product.documentId, productFixture);
+      await ensureListing(strapi, tenant.documentId, product.documentId, unit, productFixture);
     }
 
     strapi.log.info(`[demo] ${tenantFixture.name} is ready (${tenant.documentId})`);
