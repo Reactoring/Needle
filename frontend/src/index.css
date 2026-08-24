@@ -1,0 +1,519 @@
+:root {
+  --bg: #16130f;
+  --panel: #201c16;
+  --panel-2: #282219;
+  --border: #3a3227;
+  --text: #efe8db;
+  --muted: #a2947d;
+  --accent: #e8a33d;
+  --accent-dark: #c8862a;
+  --ok: #7fbf6a;
+  --ko: #e06c5a;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.app {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+/* ---- header ---- */
+
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+}
+
+.brand h1 {
+  margin: 0;
+  font-size: 1.35rem;
+  letter-spacing: 0.02em;
+}
+
+.brand-tenant {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.brand-disc {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--accent) 0 14%, #0c0a08 15% 30%, #1d1914 31% 46%, #0c0a08 47% 62%, #1d1914 63% 100%);
+  box-shadow: 0 0 0 2px var(--border);
+}
+
+.tabs {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.tabs button {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  padding: 0.55rem 1.1rem;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.tabs button.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #1c1508;
+  font-weight: 600;
+}
+
+.mode-pill {
+  margin-left: auto;
+  font-size: 0.78rem;
+  padding: 0.3rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  color: var(--muted);
+}
+
+.mode-pill.mode-real {
+  border-color: var(--ok);
+  color: var(--ok);
+}
+
+/* ---- panneaux / layout ---- */
+
+.seller-layout {
+  display: grid;
+  grid-template-columns: 260px 1fr 300px;
+  gap: 1rem;
+  align-items: start;
+}
+
+@media (max-width: 980px) {
+  .seller-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1rem;
+}
+
+.panel h2 {
+  margin: 0 0 0.8rem;
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.panel h3 {
+  font-size: 0.95rem;
+  margin: 1.2rem 0 0.6rem;
+  color: var(--accent);
+}
+
+.placeholder {
+  color: var(--muted);
+  font-style: italic;
+  font-size: 0.9rem;
+}
+
+.muted {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+/* ---- liste produits ---- */
+
+.product-list ul {
+  list-style: none;
+  margin: 0.8rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.product-list li button {
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: var(--text);
+  padding: 0.55rem 0.7rem;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.product-list li button:hover {
+  background: var(--panel-2);
+}
+
+.product-list li button.selected {
+  background: var(--panel-2);
+  border-color: var(--accent);
+}
+
+.product-list li button span {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+/* ---- formulaires ---- */
+
+.inline-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.6rem;
+}
+
+input,
+select {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 0.5rem 0.65rem;
+  font-size: 0.9rem;
+  min-width: 0;
+  flex: 1;
+}
+
+button {
+  background: var(--panel-2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.5rem 0.9rem;
+  font-size: 0.88rem;
+  cursor: pointer;
+}
+
+button:hover {
+  border-color: var(--accent);
+}
+
+button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #1c1508;
+  font-weight: 600;
+}
+
+button.primary:hover {
+  background: var(--accent-dark);
+}
+
+/* ---- detail produit ---- */
+
+.detail-header h2 {
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--text);
+  font-size: 1.25rem;
+}
+
+.search-row {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.release-results {
+  list-style: none;
+  margin: 0.8rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.release-results li {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.6rem 0.8rem;
+}
+
+.release-results li div {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.release-results img {
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+.linked-release {
+  color: var(--ok);
+}
+
+/* ---- unites ---- */
+
+.unit-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.unit-row {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.7rem 0.9rem;
+}
+
+.unit-main {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  flex-wrap: wrap;
+}
+
+.sku {
+  background: var(--bg);
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  color: var(--accent);
+  font-size: 0.85rem;
+}
+
+.unit-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.6rem;
+}
+
+.check-ok {
+  color: var(--ok);
+  font-size: 0.85rem;
+  margin: 0.5rem 0 0;
+}
+
+.check-ko {
+  color: var(--ko);
+  font-size: 0.85rem;
+  margin: 0.5rem 0 0;
+}
+
+/* ---- tags / statuts ---- */
+
+.tag {
+  font-size: 0.72rem;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.tag-linked {
+  border-color: var(--ok);
+  color: var(--ok);
+}
+
+.status-available {
+  border-color: var(--ok);
+  color: var(--ok);
+}
+
+.status-sold,
+.status-out_of_stock {
+  border-color: var(--ko);
+  color: var(--ko);
+}
+
+/* ---- timeline ---- */
+
+.timeline ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.event {
+  border-left: 3px solid var(--border);
+  padding: 0.1rem 0 0.1rem 0.7rem;
+}
+
+.event-success {
+  border-left-color: var(--ok);
+}
+
+.event-error {
+  border-left-color: var(--ko);
+}
+
+.event-action {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--accent);
+}
+
+.event p {
+  margin: 0.15rem 0;
+  font-size: 0.85rem;
+}
+
+.event time {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+/* ---- bannieres ---- */
+
+.banner-error,
+.banner-info {
+  border-radius: 10px;
+  padding: 0.7rem 1rem;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+}
+
+.banner-error {
+  background: rgba(224, 108, 90, 0.12);
+  border: 1px solid var(--ko);
+}
+
+.banner-info {
+  background: rgba(127, 191, 106, 0.1);
+  border: 1px solid var(--ok);
+}
+
+/* ---- vue acheteur ---- */
+
+.marketplace-banner {
+  background: var(--panel);
+  border: 1px dashed var(--accent);
+  border-radius: 10px;
+  padding: 0.6rem 1rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin-bottom: 1.2rem;
+}
+
+.buyer-layout h2 {
+  font-size: 1.05rem;
+  margin: 1.4rem 0 0.8rem;
+}
+
+.listing-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 1rem;
+}
+
+.listing-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.listing-card h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.cover {
+  background: var(--panel-2);
+  border-radius: 8px;
+  height: 130px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 0.4rem;
+}
+
+.disc {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--accent) 0 12%, #0c0a08 13% 32%, #1d1914 33% 48%, #0c0a08 49% 64%, #1d1914 65% 100%);
+  animation: spin 6s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.listing-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 0.5rem;
+}
+
+.listing-footer strong {
+  font-size: 1.1rem;
+  color: var(--accent);
+}
+
+.sold-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.sold-list li {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.6rem 1rem;
+}
