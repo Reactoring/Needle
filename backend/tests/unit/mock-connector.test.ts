@@ -47,7 +47,7 @@ describe('mock discogs connector', () => {
     });
     expect(published).toEqual({
       externalListingId: 'discogs-listing-0001',
-      externalUrl: 'https://www.discogs.com/sell/item/discogs-listing-0001',
+      externalUrl: 'https://example.invalid/discogs/listings/discogs-listing-0001',
       publishedPrice: 34.99,
       currency: 'EUR',
     });

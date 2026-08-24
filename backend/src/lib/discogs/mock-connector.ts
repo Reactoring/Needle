@@ -159,7 +159,7 @@ export function createMockConnector(): DiscogsConnector {
       const externalListingId = listingIdFromSku(input.sku);
       return {
         externalListingId,
-        externalUrl: `https://www.discogs.com/sell/item/${externalListingId}`,
+        externalUrl: `https://example.invalid/discogs/listings/${externalListingId}`,
         publishedPrice: input.price,
         currency: input.currency,
       };

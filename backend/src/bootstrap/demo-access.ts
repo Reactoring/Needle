@@ -11,6 +11,13 @@ const DEMO_ACTIONS = [
   'api::sellable-unit.sellable-unit.create',
   'api::channel-listing.channel-listing.find',
   'api::marketplace-sync-event.marketplace-sync-event.find',
+  'api::discogs.discogs.info',
+  'api::discogs.discogs.listings',
+  'api::discogs.discogs.search',
+  'api::discogs.discogs.attachRelease',
+  'api::discogs.discogs.checkCompleteness',
+  'api::discogs.discogs.publish',
+  'api::discogs.discogs.simulateSale',
 ];
 
 async function revokePublicPermissions(strapi: Core.Strapi) {

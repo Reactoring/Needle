@@ -223,114 +223,133 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
 
   async publish(tenantId: string, unitId: string) {
     const tenant = await this.requireTenant(tenantId);
-    const unit = await this.findUnitForTenant(tenantId, unitId);
-    const product = (unit as any).product;
+    try {
+      return await strapi.db.transaction(async ({ trx }) => {
+        await trx.raw('SELECT pg_advisory_xact_lock(hashtext(?))', [
+          `unit:${tenantId}:${unitId}`,
+        ]);
 
-    const completeness = validateListingPayload(unit as any, product);
-    if (!completeness.complete) {
-      const reason = [...completeness.missing, ...completeness.errors].join(', ');
+        const unit = await this.findUnitForTenant(tenantId, unitId);
+        const product = (unit as any).product;
+        const existing = await this.findListingForUnit(tenantId, unitId);
+        if (existing?.status === 'published') {
+          return { listing: existing, mode: getConnector().mode };
+        }
+
+        const completeness = validateListingPayload(unit as any, product);
+        if (!completeness.complete) {
+          const reason = [...completeness.missing, ...completeness.errors].join(', ');
+          throw new ValidationError(`Unit is not publishable: ${reason}`);
+        }
+
+        const published = await getConnector().publishListing({
+          sku: unit.sku as string,
+          releaseId: product.discogsReleaseId,
+          price: unit.price as number,
+          currency: unit.currency as string,
+          mediaCondition: unit.mediaCondition as string,
+          sleeveCondition: unit.sleeveCondition ?? undefined,
+          comment: unit.sellerComment ?? undefined,
+        });
+        const listingData = {
+          tenant: tenant.documentId,
+          sellableUnit: unit.documentId,
+          channel: CHANNEL,
+          status: 'published',
+          externalListingId: published.externalListingId,
+          externalUrl: published.externalUrl,
+          publishedPrice: published.publishedPrice,
+          lastSyncedAt: new Date().toISOString(),
+          lastError: null,
+        };
+        const listing = existing
+          ? await strapi.documents('api::channel-listing.channel-listing').update({
+              documentId: existing.documentId,
+              data: listingData as any,
+            })
+          : await strapi.documents('api::channel-listing.channel-listing').create({
+              data: listingData as any,
+            });
+        if (!listing) {
+          throw new Error('Failed to persist channel listing');
+        }
+
+        await this.logEvent({
+          tenantId: tenant.documentId,
+          action: 'publish_listing',
+          status: 'success',
+          message: `Unit ${unit.sku} published in the simulated marketplace as ${published.externalListingId}`,
+          payload: { ...published, mode: getConnector().mode },
+          unitId: unit.documentId,
+          productId: product.documentId,
+          listingId: listing.documentId,
+        });
+
+        return { listing, mode: getConnector().mode };
+      });
+    } catch (error) {
       await this.logEvent({
         tenantId: tenant.documentId,
         action: 'publish_listing',
         status: 'error',
-        message: `Publish refused for ${unit.sku}: ${reason}`,
-        payload: completeness as unknown as Record<string, unknown>,
-        unitId: unit.documentId,
-        productId: product?.documentId,
+        message: `Simulated publication refused: ${(error as Error).message}`,
+        payload: { unitId, mode: getConnector().mode },
+        unitId,
       });
-      throw new ValidationError(`Unit is not publishable: ${reason}`);
+      throw error;
     }
-
-    const published = await getConnector().publishListing({
-      sku: unit.sku as string,
-      releaseId: product.discogsReleaseId,
-      price: unit.price as number,
-      currency: unit.currency as string,
-      mediaCondition: unit.mediaCondition as string,
-      sleeveCondition: unit.sleeveCondition ?? undefined,
-      comment: unit.sellerComment ?? undefined,
-    });
-
-    const listingData = {
-      tenant: tenant.documentId,
-      sellableUnit: unit.documentId,
-      channel: CHANNEL,
-      status: 'published',
-      externalListingId: published.externalListingId,
-      externalUrl: published.externalUrl,
-      publishedPrice: published.publishedPrice,
-      lastSyncedAt: new Date().toISOString(),
-      lastError: null,
-    };
-
-    const existing = await this.findListingForUnit(tenantId, unitId);
-    const listing = existing
-      ? await strapi.documents('api::channel-listing.channel-listing').update({
-          documentId: existing.documentId,
-          data: listingData as any,
-        })
-      : await strapi.documents('api::channel-listing.channel-listing').create({
-          data: listingData as any,
-        });
-    if (!listing) {
-      throw new Error('Failed to persist channel listing');
-    }
-
-    await this.logEvent({
-      tenantId: tenant.documentId,
-      action: 'publish_listing',
-      status: 'success',
-      message: `Unit ${unit.sku} published on Discogs as ${published.externalListingId}`,
-      payload: { ...published, mode: getConnector().mode },
-      unitId: unit.documentId,
-      productId: product.documentId,
-      listingId: listing.documentId,
-    });
-
-    return { listing, mode: getConnector().mode };
   },
 
   async simulateSale(tenantId: string, unitId: string) {
     const tenant = await this.requireTenant(tenantId);
-    const unit = await this.findUnitForTenant(tenantId, unitId);
+    return strapi.db.transaction(async ({ trx }) => {
+      await trx.raw('SELECT pg_advisory_xact_lock(hashtext(?))', [
+        `unit:${tenantId}:${unitId}`,
+      ]);
 
-    const listing = await this.findListingForUnit(tenantId, unitId);
-    if (!listing || listing.status !== 'published') {
-      throw new ValidationError(
-        `Unit ${unit.sku} has no published Discogs listing, nothing to sell`,
-      );
-    }
+      const unit = await this.findUnitForTenant(tenantId, unitId);
+      const listing = await this.findListingForUnit(tenantId, unitId);
+      if (unit.saleStatus === 'sold' && listing?.status === 'removed') {
+        return { unit, listing };
+      }
+      if (!listing || listing.status !== 'published') {
+        throw new ValidationError(
+          `Unit ${unit.sku} has no published simulated listing, nothing to sell`,
+        );
+      }
+      if (unit.saleStatus !== 'available' || Number(unit.quantity) < 1) {
+        throw new ValidationError(`Unit ${unit.sku} is not available for sale`);
+      }
 
-    const soldUnit = await strapi.documents('api::sellable-unit.sellable-unit').update({
-      documentId: unit.documentId,
-      data: { saleStatus: 'sold', quantity: 0 } as any,
+      const soldUnit = await strapi.documents('api::sellable-unit.sellable-unit').update({
+        documentId: unit.documentId,
+        data: { saleStatus: 'sold', quantity: 0 } as any,
+      });
+      const removedListing = await strapi.documents('api::channel-listing.channel-listing').update({
+        documentId: listing.documentId,
+        data: { status: 'removed', lastSyncedAt: new Date().toISOString() } as any,
+      });
+
+      await this.logEvent({
+        tenantId: tenant.documentId,
+        action: 'simulate_sale',
+        status: 'success',
+        message: `Sale simulated for ${unit.sku} (listing ${listing.externalListingId})`,
+        payload: { externalListingId: listing.externalListingId },
+        unitId: unit.documentId,
+        listingId: listing.documentId,
+      });
+      await this.logEvent({
+        tenantId: tenant.documentId,
+        action: 'mark_out_of_stock',
+        status: 'success',
+        message: `Unit ${unit.sku} marked as sold, local stock set to 0`,
+        payload: { saleStatus: 'sold', quantity: 0 },
+        unitId: unit.documentId,
+        listingId: listing.documentId,
+      });
+
+      return { unit: soldUnit, listing: removedListing };
     });
-
-    const removedListing = await strapi.documents('api::channel-listing.channel-listing').update({
-      documentId: listing.documentId,
-      data: { status: 'removed', lastSyncedAt: new Date().toISOString() } as any,
-    });
-
-    await this.logEvent({
-      tenantId: tenant.documentId,
-      action: 'simulate_sale',
-      status: 'success',
-      message: `Discogs sale simulated for ${unit.sku} (listing ${listing.externalListingId})`,
-      payload: { externalListingId: listing.externalListingId },
-      unitId: unit.documentId,
-      listingId: listing.documentId,
-    });
-
-    await this.logEvent({
-      tenantId: tenant.documentId,
-      action: 'mark_out_of_stock',
-      status: 'success',
-      message: `Unit ${unit.sku} marked as sold, local stock set to 0`,
-      payload: { saleStatus: 'sold', quantity: 0 },
-      unitId: unit.documentId,
-      listingId: listing.documentId,
-    });
-
-    return { unit: soldUnit, listing: removedListing };
   },
 });
