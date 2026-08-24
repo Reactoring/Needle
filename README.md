@@ -349,6 +349,25 @@ npm run lint
 npm run build
 ```
 
+## Développement assisté et revue croisée par IA
+
+Ce projet a été développé avec l’assistance complémentaire de deux agents de programmation :
+
+- **Claude Code — Fable 5** : compréhension du domaine métier, structuration du backend,
+  recommandations d’architecture et implémentation agentique orientée qualité et robustesse ;
+- **Codex — Sol** : évaluation technique, créativité UX/UI, conception du backoffice vendeur,
+  génération des illustrations et validation fonctionnelle dans le navigateur.
+
+Les agents n’ont pas travaillé de manière isolée. Les changements significatifs produits ou
+proposés par l’un ont été relus et évalués par l’autre, dans les deux sens. Cette revue croisée
+a notamment porté sur le backend, la sécurité multi-tenant, les migrations PostgreSQL,
+l’expérience vendeur, la documentation et les limites de la démo.
+
+Les propositions n’ont pas été acceptées automatiquement : les choix fonctionnels, les groupes
+de changements et les commits ont été validés humainement. Le résultat a également été contrôlé
+par les tests unitaires et E2E, ESLint, TypeScript, les builds de production et des vérifications
+manuelles de l’interface.
+
 ## Frontières assumées
 
 - La démo ne contient ni paiement, ni vraie commande, ni synchronisation externe.
