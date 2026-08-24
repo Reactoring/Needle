@@ -13,7 +13,8 @@ démonstration.
 | Sujet         | Comportement                                                                       |
 | ------------- | ---------------------------------------------------------------------------------- |
 | Multi-tenant  | Sélecteur entre **Demo Records** et **Second Groove**, données et journaux séparés |
-| Catalogue     | 4 fiches fictives par boutique, pochettes générées, recherche et ajout de fiche    |
+| Backoffice    | Dashboard KPI, recherche, filtres, tri et gestion produit dans un panneau latéral  |
+| Catalogue     | 4 fiches fictives par boutique, pochettes générées et tableau de stock responsive  |
 | Stock         | Unités physiques distinctes, état disque/pochette, prix et statut de stock         |
 | SKU           | Attribution PostgreSQL sûre en concurrence : `VIN-000001`, `VIN-000002`…           |
 | Marketplace   | Recherche de release, association, complétude, publication et vente simulées       |
@@ -24,6 +25,11 @@ Il n’existe **aucun mode Discogs réel** dans ce projet. `DISCOGS_MODE=mock` e
 valeur acceptée ; toute autre valeur bloque le démarrage du connecteur. Aucun token Discogs
 n’est demandé et aucune requête n’est envoyée à Discogs. Les URL externes générées utilisent
 le domaine non routable `example.invalid`.
+
+La donnée de référence demandée dans l’énoncé est conservée dans le catalogue mock : rechercher
+`daft punk` retourne **Daft Punk — Discovery**, release `123456`, et publier l’exemplaire
+`VIN-000001` produit l’identifiant déterministe `discogs-listing-0001`. Les boutiques seedées
+utilisent volontairement des artistes et des œuvres fictifs, mieux adaptés à une démo publique.
 
 ## Stack
 
@@ -36,6 +42,48 @@ le domaine non routable `example.invalid`.
 
 PostgreSQL est requis : l’allocation des SKU et les verrous transactionnels utilisent des
 fonctionnalités PostgreSQL.
+
+## Architecture en une vue
+
+```mermaid
+flowchart LR
+    UI["React + Vite<br/>Dashboard vendeur et Marketplace"]
+    SESSION["Session démo<br/>cookie HTTP-only"]
+    AUTH["Strapi Users & Permissions"]
+    POLICY["Policy tenant<br/>scope imposé côté serveur"]
+    SERVICES["Services métier<br/>transactions et verrous"]
+    MOCK["Connecteur Discogs mock<br/>catalogue local"]
+    DB[("PostgreSQL<br/>catalogue, stock, listings, audit")]
+    ADMIN["Administration Strapi<br/>auth indépendante"]
+    ADMIN_API["API d’administration Strapi"]
+
+    UI --> SESSION --> AUTH --> POLICY --> SERVICES
+    SERVICES --> MOCK
+    SERVICES --> DB
+    ADMIN --> ADMIN_API --> DB
+```
+
+Le navigateur ne choisit jamais seul le périmètre de données : la policy valide le tenant
+autorisé et les services appliquent ce scope avant tout accès PostgreSQL. Le connecteur mock
+est isolé derrière la même interface qu’un connecteur marketplace, mais ne possède aucune
+branche réseau réelle.
+
+## Conformité au test technique
+
+| Critère de réussite                               | Implémentation                                                                  | Preuve reproductible                                                                                                   |
+| ------------------------------------------------- | ------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| Le projet se lance localement                     | Scripts Strapi/Vite, PostgreSQL Docker et variables documentées                 | Procédure [Démarrage local](#démarrage-local), `npm run build` dans les deux applications                              |
+| Le modèle métier demandé existe                   | `Tenant`, `Product`, `SellableUnit`, `ChannelListing` et `MarketplaceSyncEvent` | Schéma [Modèle de données](#modèle-de-données), contenus consultables dans Strapi                                      |
+| Les données sont isolées par tenant               | Policy obligatoire, relations normalisées et filtres serveur forcés             | [`demo-security.test.ts`](backend/tests/unit/demo-security.test.ts) et refus inter-tenant du scénario E2E              |
+| Le SKU est généré automatiquement                 | Lifecycle backend et séquence PostgreSQL avec index unique                      | [`sku.test.ts`](backend/tests/unit/sku.test.ts) et création E2E de 8 unités concurrentes                               |
+| Une release peut être recherchée et associée      | Connecteur mock et endpoint d’association produit                               | [`mock-connector.test.ts`](backend/tests/unit/mock-connector.test.ts) et étape E2E `release is attached`               |
+| Une unité peut être validée puis publiée          | Service de complétude et publication transactionnelle idempotente               | [`validation.test.ts`](backend/tests/unit/validation.test.ts) et 8 publications concurrentes dans l’E2E                |
+| L’`externalListingId` est stocké                  | `ChannelListing` persistant et identifiant déterministe issu du SKU             | Test `discogs-listing-0001` du connecteur et contrôle E2E d’une seule annonce par unité                                |
+| Une vente peut être simulée                       | Endpoint de vente mock protégé par verrou transactionnel                        | Étape E2E `concurrent simulated sales are idempotent`                                                                  |
+| L’unité passe hors stock et l’annonce est retirée | Transition atomique vers `sold`, quantité `0`, listing `removed`                | Assertions du scénario [`e2e-workflow.mjs`](backend/scripts/e2e-workflow.mjs)                                          |
+| Les événements sont journalisés                   | Audit persistant et scopé par tenant                                            | L’E2E vérifie une occurrence de `check_completeness`, `publish_listing`, `simulate_sale` et `mark_out_of_stock`        |
+| Le parcours est reproductible                     | Seed idempotent, reset ciblé, interface et requêtes HTTP documentées            | [Workflow Marketplace simulé](#workflow-marketplace-simulé), [`requests.http`](backend/requests.http) et `npm run e2e` |
+| Le hors scope est respecté                        | Aucun Fnac, Amazon, Stripe, paiement, livraison, CMS ou synchronisation réelle  | Limites explicites dans [Frontières assumées](#frontières-assumées)                                                    |
 
 ## Modèle de données
 
