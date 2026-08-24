@@ -1,6 +1,10 @@
 import type { Completeness, Listing, Product, Release, SyncEvent, Tenant, Unit } from './types';
 
-const BASE = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:1337';
+// In development the API runs on its own port; in production the app is served
+// behind the same origin as the API proxy, so relative URLs are the default.
+const BASE =
+  (import.meta.env.VITE_API_URL as string | undefined) ||
+  (import.meta.env.DEV ? 'http://localhost:1337' : '');
 
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
   const response = await fetch(`${BASE}/api${path}`, {
