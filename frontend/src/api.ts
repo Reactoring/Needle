@@ -5,6 +5,7 @@ const BASE = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://loc
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
   const response = await fetch(`${BASE}/api${path}`, {
     method,
+    credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
     body: body === undefined ? undefined : JSON.stringify(body),
   });
@@ -17,6 +18,10 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
 }
 
 export const api = {
+  async startDemoSession(): Promise<{ mode: string; tenants: Tenant[] }> {
+    return request('POST', '/demo/session');
+  },
+
   async getDemoTenant(): Promise<Tenant | null> {
     const res = await request<{ data: Tenant[] }>(
       'GET',

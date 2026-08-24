@@ -16,8 +16,11 @@ export default function App() {
   const refresh = useCallback(() => setRefreshKey((k) => k + 1), []);
 
   useEffect(() => {
-    Promise.all([api.getDemoTenant(), api.getMode()])
-      .then(([t, m]) => {
+    api
+      .startDemoSession()
+      .then(async (session) => {
+        const m = await api.getMode();
+        const t = session.tenants.find((candidate) => candidate.slug === 'demo-records') ?? null;
         setTenant(t);
         setMode(m);
         if (!t) setError('Tenant de démo introuvable — le seed backend a-t-il tourné ?');
