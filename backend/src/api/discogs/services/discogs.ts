@@ -225,9 +225,7 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
     const tenant = await this.requireTenant(tenantId);
     try {
       return await strapi.db.transaction(async ({ trx }) => {
-        await trx.raw('SELECT pg_advisory_xact_lock(hashtext(?))', [
-          `unit:${tenantId}:${unitId}`,
-        ]);
+        await trx.raw('SELECT pg_advisory_xact_lock(hashtext(?))', [`unit:${tenantId}:${unitId}`]);
 
         const unit = await this.findUnitForTenant(tenantId, unitId);
         const product = (unit as any).product;
@@ -303,9 +301,7 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
   async simulateSale(tenantId: string, unitId: string) {
     const tenant = await this.requireTenant(tenantId);
     return strapi.db.transaction(async ({ trx }) => {
-      await trx.raw('SELECT pg_advisory_xact_lock(hashtext(?))', [
-        `unit:${tenantId}:${unitId}`,
-      ]);
+      await trx.raw('SELECT pg_advisory_xact_lock(hashtext(?))', [`unit:${tenantId}:${unitId}`]);
 
       const unit = await this.findUnitForTenant(tenantId, unitId);
       const listing = await this.findListingForUnit(tenantId, unitId);
