@@ -9,7 +9,11 @@
   --accent-dark: #c8862a;
   --ok: #7fbf6a;
   --ko: #e06c5a;
-  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-family:
+    'Segoe UI',
+    system-ui,
+    -apple-system,
+    sans-serif;
   color-scheme: dark;
 }
 
@@ -61,7 +65,14 @@ body {
   width: 42px;
   height: 42px;
   border-radius: 50%;
-  background: radial-gradient(circle, var(--accent) 0 14%, #0c0a08 15% 30%, #1d1914 31% 46%, #0c0a08 47% 62%, #1d1914 63% 100%);
+  background: radial-gradient(
+    circle,
+    var(--accent) 0 14%,
+    #0c0a08 15% 30%,
+    #1d1914 31% 46%,
+    #0c0a08 47% 62%,
+    #1d1914 63% 100%
+  );
   box-shadow: 0 0 0 2px var(--border);
 }
 
@@ -477,7 +488,14 @@ button.primary:hover {
   width: 96px;
   height: 96px;
   border-radius: 50%;
-  background: radial-gradient(circle, var(--accent) 0 12%, #0c0a08 13% 32%, #1d1914 33% 48%, #0c0a08 49% 64%, #1d1914 65% 100%);
+  background: radial-gradient(
+    circle,
+    var(--accent) 0 12%,
+    #0c0a08 13% 32%,
+    #1d1914 33% 48%,
+    #0c0a08 49% 64%,
+    #1d1914 65% 100%
+  );
   animation: spin 6s linear infinite;
 }
 

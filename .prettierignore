@@ -1,0 +1,8 @@
+node_modules/
+dist/
+build/
+.strapi/
+package-lock.json
+backend/types/
+backend/database/migrations/
+frontend/public/

@@ -26,7 +26,7 @@ export function BuyerView({ tenant, refreshKey, onChanged }: Props) {
     try {
       await api.simulateSale(tenant.documentId, listing.sellableUnit.documentId);
       setMessage(
-        `Vente simulée : ${listing.sellableUnit.product?.artist} — ${listing.sellableUnit.product?.title} (${listing.externalListingId})`
+        `Vente simulée : ${listing.sellableUnit.product?.artist} — ${listing.sellableUnit.product?.title} (${listing.externalListingId})`,
       );
       onChanged();
     } catch (error) {

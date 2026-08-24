@@ -298,7 +298,7 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
     const listing = await this.findListingForUnit(tenantId, unitId);
     if (!listing || listing.status !== 'published') {
       throw new ValidationError(
-        `Unit ${unit.sku} has no published Discogs listing, nothing to sell`
+        `Unit ${unit.sku} has no published Discogs listing, nothing to sell`,
       );
     }
 
@@ -307,12 +307,10 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
       data: { saleStatus: 'sold', quantity: 0 } as any,
     });
 
-    const removedListing = await strapi
-      .documents('api::channel-listing.channel-listing')
-      .update({
-        documentId: listing.documentId,
-        data: { status: 'removed', lastSyncedAt: new Date().toISOString() } as any,
-      });
+    const removedListing = await strapi.documents('api::channel-listing.channel-listing').update({
+      documentId: listing.documentId,
+      data: { status: 'removed', lastSyncedAt: new Date().toISOString() } as any,
+    });
 
     await this.logEvent({
       tenantId: tenant.documentId,

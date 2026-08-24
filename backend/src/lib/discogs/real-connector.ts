@@ -55,7 +55,7 @@ export function createRealConnector(token: string): DiscogsConnector {
       const q = query.trim();
       if (!q) return [];
       const data = await request<{ results: DiscogsSearchResult[] }>(
-        `/database/search?type=release&per_page=10&q=${encodeURIComponent(q)}`
+        `/database/search?type=release&per_page=10&q=${encodeURIComponent(q)}`,
       );
       return data.results.map((result) => {
         const { artist, title } = splitTitle(result.title);

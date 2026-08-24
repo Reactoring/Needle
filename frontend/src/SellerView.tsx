@@ -206,8 +206,12 @@ function ProductDetail({
                       onClick={() =>
                         run(
                           () =>
-                            api.attachRelease(tenant.documentId, product.documentId, release.releaseId),
-                          `Release ${release.releaseId} associée.`
+                            api.attachRelease(
+                              tenant.documentId,
+                              product.documentId,
+                              release.releaseId,
+                            ),
+                          `Release ${release.releaseId} associée.`,
                         )
                       }
                     >
@@ -226,7 +230,10 @@ function ProductDetail({
         <h3>2 · Exemplaires en vente</h3>
         <NewUnitForm
           onCreate={(input) =>
-            run(() => api.createUnit(tenant.documentId, product.documentId, input), 'Exemplaire créé (SKU généré par le backend).')
+            run(
+              () => api.createUnit(tenant.documentId, product.documentId, input),
+              'Exemplaire créé (SKU généré par le backend).',
+            )
           }
         />
         <ul className="unit-list">
@@ -306,7 +313,10 @@ function UnitRow({
           {unit.price.toFixed(2)} {unit.currency}
         </span>
         <span className="muted">
-          {[CONDITION_LABELS[unit.mediaCondition ?? ''], CONDITION_LABELS[unit.sleeveCondition ?? '']]
+          {[
+            CONDITION_LABELS[unit.mediaCondition ?? ''],
+            CONDITION_LABELS[unit.sleeveCondition ?? ''],
+          ]
             .filter(Boolean)
             .join(' / ')}
         </span>

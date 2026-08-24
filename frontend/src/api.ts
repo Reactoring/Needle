@@ -1,12 +1,4 @@
-import type {
-  Completeness,
-  Listing,
-  Product,
-  Release,
-  SyncEvent,
-  Tenant,
-  Unit,
-} from './types';
+import type { Completeness, Listing, Product, Release, SyncEvent, Tenant, Unit } from './types';
 
 const BASE = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:1337';
 
@@ -28,7 +20,7 @@ export const api = {
   async getDemoTenant(): Promise<Tenant | null> {
     const res = await request<{ data: Tenant[] }>(
       'GET',
-      '/tenants?filters[slug][$eq]=demo-records'
+      '/tenants?filters[slug][$eq]=demo-records',
     );
     return res.data[0] ?? null;
   },
@@ -41,7 +33,7 @@ export const api = {
   async getProducts(tenantId: string): Promise<Product[]> {
     const res = await request<{ data: Product[] }>(
       'GET',
-      `/products?filters[tenant][documentId][$eq]=${tenantId}&populate=sellableUnits&sort=createdAt:desc&pagination[pageSize]=50`
+      `/products?filters[tenant][documentId][$eq]=${tenantId}&populate=sellableUnits&sort=createdAt:desc&pagination[pageSize]=50`,
     );
     return res.data;
   },
@@ -61,14 +53,14 @@ export const api = {
     return request<{ product: Product; release: Release }>(
       'POST',
       `/products/${productId}/attach-discogs-release`,
-      { tenantId, releaseId }
+      { tenantId, releaseId },
     );
   },
 
   async createUnit(
     tenantId: string,
     productId: string,
-    input: { price: number; mediaCondition: string; sleeveCondition: string }
+    input: { price: number; mediaCondition: string; sleeveCondition: string },
   ): Promise<Unit> {
     const res = await request<{ data: Unit }>('POST', '/sellable-units', {
       data: {
@@ -105,7 +97,7 @@ export const api = {
   async getEvents(tenantId: string): Promise<SyncEvent[]> {
     const res = await request<{ data: SyncEvent[] }>(
       'GET',
-      `/marketplace-sync-events?filters[tenant][documentId][$eq]=${tenantId}&sort=happenedAt:desc&pagination[pageSize]=25`
+      `/marketplace-sync-events?filters[tenant][documentId][$eq]=${tenantId}&sort=happenedAt:desc&pagination[pageSize]=25`,
     );
     return res.data;
   },

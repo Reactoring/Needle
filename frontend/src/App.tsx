@@ -23,7 +23,9 @@ export default function App() {
         if (!t) setError('Tenant de démo introuvable — le seed backend a-t-il tourné ?');
       })
       .catch(() =>
-        setError('Backend injoignable sur http://localhost:1337 — lancer `npm run develop` dans backend/.')
+        setError(
+          'Backend injoignable sur http://localhost:1337 — lancer `npm run develop` dans backend/.',
+        ),
       );
   }, []);
 

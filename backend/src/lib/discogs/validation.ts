@@ -24,7 +24,7 @@ export interface CompletenessResult {
 // une release associee, un grading media/pochette et un prix valide.
 export function validateListingPayload(
   unit: UnitForValidation,
-  product: ProductForValidation | null | undefined
+  product: ProductForValidation | null | undefined,
 ): CompletenessResult {
   const missing: string[] = [];
   const errors: string[] = [];

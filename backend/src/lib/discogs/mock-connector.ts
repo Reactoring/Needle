@@ -75,7 +75,7 @@ export function createMockConnector(): DiscogsConnector {
       const q = query.trim().toLowerCase();
       if (!q) return [];
       return MOCK_RELEASES.filter((release) =>
-        `${release.artist} ${release.title}`.toLowerCase().includes(q)
+        `${release.artist} ${release.title}`.toLowerCase().includes(q),
       );
     },
 

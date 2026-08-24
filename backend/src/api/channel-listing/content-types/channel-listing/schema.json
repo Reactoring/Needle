@@ -36,14 +36,7 @@
     },
     "status": {
       "type": "enumeration",
-      "enum": [
-        "not_published",
-        "pending",
-        "published",
-        "failed",
-        "removed",
-        "sync_error"
-      ],
+      "enum": ["not_published", "pending", "published", "failed", "removed", "sync_error"],
       "default": "not_published",
       "required": true
     },

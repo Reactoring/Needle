@@ -4,16 +4,9 @@ import { createRealConnector } from './real-connector';
 
 export * from './types';
 export { validateListingPayload } from './validation';
-export type {
-  CompletenessResult,
-  UnitForValidation,
-  ProductForValidation,
-} from './validation';
+export type { CompletenessResult, UnitForValidation, ProductForValidation } from './validation';
 
-export function createDiscogsConnector(env: {
-  mode?: string;
-  token?: string;
-}): DiscogsConnector {
+export function createDiscogsConnector(env: { mode?: string; token?: string }): DiscogsConnector {
   const mode: DiscogsMode = env.mode === 'real' ? 'real' : 'mock';
 
   if (mode === 'real') {

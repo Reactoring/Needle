@@ -45,7 +45,11 @@ const productRes = await api('POST', '/products', {
   },
 });
 const product = productRes.json?.data;
-check('product created', productRes.status >= 200 && productRes.status < 300 && product, productRes);
+check(
+  'product created',
+  productRes.status >= 200 && productRes.status < 300 && product,
+  productRes,
+);
 
 // 3. Recherche de release
 const search = await api('GET', `/discogs/search?tenantId=${tenantId}&q=homework`);
@@ -60,7 +64,7 @@ const attach = await api('POST', `/products/${product.documentId}/attach-discogs
 check(
   'release attached to product',
   attach.status === 200 && attach.json?.product?.discogsReleaseId === release.releaseId,
-  attach
+  attach,
 );
 
 // 5. Creation de l'unite vendable (le SKU doit venir du backend)
@@ -84,9 +88,13 @@ check(`sku auto-generated (${unit?.sku})`, /^VIN-\d{6,}$/.test(unit?.sku ?? ''),
 const completeness = await api(
   'POST',
   `/sellable-units/${unit.documentId}/check-discogs-completeness`,
-  { tenantId }
+  { tenantId },
 );
-check('unit is complete for discogs', completeness.status === 200 && completeness.json?.complete, completeness);
+check(
+  'unit is complete for discogs',
+  completeness.status === 200 && completeness.json?.complete,
+  completeness,
+);
 
 // 7. Publication
 const publish = await api('POST', `/sellable-units/${unit.documentId}/publish-discogs`, {
@@ -96,7 +104,7 @@ const listing = publish.json?.listing;
 check(
   'listing published with an external id',
   publish.status === 200 && listing?.status === 'published' && !!listing?.externalListingId,
-  publish
+  publish,
 );
 
 // 8. Le listing est visible cote "marketplace"
@@ -105,7 +113,7 @@ check(
   'published listing is listed',
   listings.status === 200 &&
     listings.json?.some?.((l) => l.externalListingId === listing.externalListingId),
-  listings
+  listings,
 );
 
 // 9. Vente simulee
@@ -118,16 +126,21 @@ check(
     sale.json?.unit?.saleStatus === 'sold' &&
     sale.json?.unit?.quantity === 0 &&
     sale.json?.listing?.status === 'removed',
-  sale
+  sale,
 );
 
 // 10. Les evenements de synchro ont ete journalises
 const events = await api(
   'GET',
-  `/marketplace-sync-events?filters[sellableUnit][documentId][$eq]=${unit.documentId}&pagination[pageSize]=50`
+  `/marketplace-sync-events?filters[sellableUnit][documentId][$eq]=${unit.documentId}&pagination[pageSize]=50`,
 );
 const actions = (events.json?.data ?? []).map((e) => e.action);
-for (const expected of ['check_completeness', 'publish_listing', 'simulate_sale', 'mark_out_of_stock']) {
+for (const expected of [
+  'check_completeness',
+  'publish_listing',
+  'simulate_sale',
+  'mark_out_of_stock',
+]) {
   check(`sync event "${expected}" logged`, actions.includes(expected), actions);
 }
 

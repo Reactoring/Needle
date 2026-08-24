@@ -34,11 +34,11 @@ describe('validateListingPayload', () => {
   it('lists every missing field', () => {
     const result = validateListingPayload(
       { ...completeUnit, mediaCondition: null, sleeveCondition: null },
-      { ...completeProduct, discogsReleaseId: null }
+      { ...completeProduct, discogsReleaseId: null },
     );
     expect(result.complete).toBe(false);
     expect(result.missing).toEqual(
-      expect.arrayContaining(['product.discogsReleaseId', 'mediaCondition', 'sleeveCondition'])
+      expect.arrayContaining(['product.discogsReleaseId', 'mediaCondition', 'sleeveCondition']),
     );
   });
 
@@ -49,10 +49,7 @@ describe('validateListingPayload', () => {
   });
 
   it('rejects a unit that is not available for sale', () => {
-    const result = validateListingPayload(
-      { ...completeUnit, saleStatus: 'sold' },
-      completeProduct
-    );
+    const result = validateListingPayload({ ...completeUnit, saleStatus: 'sold' }, completeProduct);
     expect(result.complete).toBe(false);
     expect(result.errors.some((e) => e.includes('not available for sale'))).toBe(true);
   });
