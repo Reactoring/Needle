@@ -1,70 +1,134 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from './api';
 import type { Tenant } from './types';
 import { SellerView } from './SellerView';
 import { BuyerView } from './BuyerView';
 
-type Tab = 'seller' | 'buyer';
+type Tab = 'catalog' | 'marketplace';
 
 export default function App() {
-  const [tenant, setTenant] = useState<Tenant | null>(null);
-  const [mode, setMode] = useState<string>('');
-  const [tab, setTab] = useState<Tab>('seller');
+  const [tenants, setTenants] = useState<Tenant[]>([]);
+  const [tenantId, setTenantId] = useState('');
+  const [mode, setMode] = useState('');
+  const [tab, setTab] = useState<Tab>('catalog');
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   // Incremente a chaque action pour rafraichir les listes des deux vues.
   const [refreshKey, setRefreshKey] = useState(0);
-  const refresh = useCallback(() => setRefreshKey((k) => k + 1), []);
+  const refresh = useCallback(() => setRefreshKey((key) => key + 1), []);
 
   useEffect(() => {
     api
       .startDemoSession()
-      .then(async (session) => {
-        const m = await api.getMode();
-        const t = session.tenants.find((candidate) => candidate.slug === 'demo-records') ?? null;
-        setTenant(t);
-        setMode(m);
-        if (!t) setError('Tenant de démo introuvable — le seed backend a-t-il tourné ?');
+      .then((session) => {
+        setTenants(session.tenants);
+        setMode(session.mode);
+        const preferred =
+          session.tenants.find((candidate) => candidate.slug === 'demo-records') ??
+          session.tenants[0];
+        if (preferred) {
+          setTenantId(preferred.documentId);
+        } else {
+          setError('Aucune boutique de démonstration disponible. Lancez le seed backend.');
+        }
       })
       .catch(() =>
         setError(
-          'Backend injoignable sur http://localhost:1337 — lancer `npm run develop` dans backend/.',
+          'Le backend est injoignable sur http://localhost:1337. Lancez `npm run develop` dans backend/.',
         ),
-      );
+      )
+      .finally(() => setLoading(false));
   }, []);
 
+  const tenant = useMemo(
+    () => tenants.find((candidate) => candidate.documentId === tenantId) ?? null,
+    [tenantId, tenants],
+  );
+
+  function changeTenant(nextTenantId: string) {
+    setTenantId(nextTenantId);
+    setRefreshKey((key) => key + 1);
+  }
+
   return (
-    <div className="app">
+    <div className="app-shell">
       <header className="topbar">
-        <div className="brand">
-          <span className="brand-disc" aria-hidden />
-          <div>
-            <h1>Vinyl Backoffice</h1>
-            {tenant && <p className="brand-tenant">Boutique : {tenant.name}</p>}
-          </div>
-        </div>
-        <nav className="tabs">
-          <button className={tab === 'seller' ? 'active' : ''} onClick={() => setTab('seller')}>
-            Boutique (vendeur)
+        <a className="brand" href="#main-content" aria-label="Aller au contenu">
+          <span className="brand-mark" aria-hidden="true">
+            <span />
+          </span>
+          <span className="brand-copy">
+            <strong>Needle</strong>
+            <small>Vinyl operations</small>
+          </span>
+        </a>
+
+        <nav className="tabs" aria-label="Sections principales">
+          <button className={tab === 'catalog' ? 'active' : ''} onClick={() => setTab('catalog')}>
+            <span aria-hidden="true">◫</span> Catalogue
           </button>
-          <button className={tab === 'buyer' ? 'active' : ''} onClick={() => setTab('buyer')}>
-            Marketplace — simulation Discogs
+          <button
+            className={tab === 'marketplace' ? 'active' : ''}
+            onClick={() => setTab('marketplace')}
+          >
+            <span aria-hidden="true">◎</span> Marketplace
           </button>
         </nav>
-        {mode && (
-          <span className={`mode-pill mode-${mode}`}>
-            Discogs : mode {mode === 'mock' ? 'mock (sans réseau)' : 'API réelle'}
+
+        <div className="topbar-actions">
+          <span className="connection-status">
+            <i aria-hidden="true" /> Session active
           </span>
-        )}
+          <label className="tenant-picker">
+            <span>Boutique active</span>
+            <select
+              value={tenantId}
+              onChange={(event) => changeTenant(event.target.value)}
+              disabled={loading || tenants.length === 0}
+            >
+              {tenants.map((candidate) => (
+                <option key={candidate.documentId} value={candidate.documentId}>
+                  {candidate.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
       </header>
+
+      <div className="demo-notice" role="note">
+        <span className="demo-badge">Démo</span>
+        <div>
+          <strong>Session sans mot de passe</strong>
+          <span>
+            Données fictives isolées par boutique · actions Discogs entièrement simulées
+            {mode ? ` · mode ${mode}` : ''}
+          </span>
+        </div>
+        <span className="demo-tenant-count">{tenants.length || '—'} boutiques</span>
+      </div>
 
       {error && <div className="banner-error">{error}</div>}
 
-      {tenant && tab === 'seller' && (
-        <SellerView tenant={tenant} refreshKey={refreshKey} onChanged={refresh} />
-      )}
-      {tenant && tab === 'buyer' && (
-        <BuyerView tenant={tenant} refreshKey={refreshKey} onChanged={refresh} />
-      )}
+      <main id="main-content">
+        {loading && <div className="loading-state">Ouverture de la session de démonstration…</div>}
+        {tenant && tab === 'catalog' && (
+          <SellerView
+            key={tenant.documentId}
+            tenant={tenant}
+            refreshKey={refreshKey}
+            onChanged={refresh}
+          />
+        )}
+        {tenant && tab === 'marketplace' && (
+          <BuyerView
+            key={tenant.documentId}
+            tenant={tenant}
+            refreshKey={refreshKey}
+            onChanged={refresh}
+          />
+        )}
+      </main>
     </div>
   );
 }
