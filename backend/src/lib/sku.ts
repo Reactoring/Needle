@@ -11,5 +11,9 @@ export function parseSkuNumber(sku: string | null | undefined): number {
 
 export function nextSku(lastSku: string | null | undefined): string {
   const next = parseSkuNumber(lastSku) + 1;
-  return `${SKU_PREFIX}-${String(next).padStart(SKU_PADDING, '0')}`;
+  return formatSku(next);
+}
+
+export function formatSku(value: number): string {
+  return `${SKU_PREFIX}-${String(value).padStart(SKU_PADDING, '0')}`;
 }

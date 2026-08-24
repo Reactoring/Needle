@@ -358,5 +358,10 @@ export async function resetDemoData(strapi: Core.Strapi) {
     await strapi.documents('api::tenant.tenant').delete({ documentId: tenant.documentId });
   }
 
+  const remainingUnits = await strapi.db.query('api::sellable-unit.sellable-unit').count();
+  if (remainingUnits === 0) {
+    await strapi.db.connection.raw('ALTER SEQUENCE IF EXISTS vinyl_sku_sequence RESTART WITH 1');
+  }
+
   await seedDemoData(strapi);
 }
