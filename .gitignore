@@ -19,5 +19,14 @@ npm-debug.log*
 .DS_Store
 Thumbs.db
 
+# local tooling
+.claude/
+
+# strapi generated types
+backend/types/generated/
+
+# stray binaries
+*.exe
+
 # local database dumps
 *.sql.gz
