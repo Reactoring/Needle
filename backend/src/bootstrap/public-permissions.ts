@@ -1,8 +1,9 @@
 import type { Core } from '@strapi/strapi';
 
-// Lecture publique sur les modeles metier pour consulter les donnees du parcours
-// de test sans token API. Choix assume pour la demo : en production ces routes
-// seraient derriere une vraie gestion de roles.
+// Acces public sur les modeles metier pour derouler le parcours de test sans
+// token API (lecture partout, creation limitee aux fiches et unites).
+// Choix assume pour la demo : en production ces routes seraient derriere une
+// vraie gestion de roles.
 const PUBLIC_READ_ACTIONS = [
   'api::tenant.tenant.find',
   'api::tenant.tenant.findOne',
@@ -14,6 +15,8 @@ const PUBLIC_READ_ACTIONS = [
   'api::channel-listing.channel-listing.findOne',
   'api::marketplace-sync-event.marketplace-sync-event.find',
   'api::marketplace-sync-event.marketplace-sync-event.findOne',
+  'api::product.product.create',
+  'api::sellable-unit.sellable-unit.create',
 ];
 
 export async function grantPublicReadPermissions(strapi: Core.Strapi) {
